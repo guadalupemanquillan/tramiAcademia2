@@ -71,8 +71,6 @@
       </div>
     </div>
   </div>
-
-  <!-- Modo detalle ya no se usa para 'Ver'; se conserva para futuros usos -->
   <!-- Modal Crear / Editar -->
   <div class="modal fade" id="modalEmpresa" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
@@ -115,10 +113,6 @@
             </div>
             <div class="d-grid gap-2 mt-3">
               <button class="btn btn-brand" (click)="modalEmpresa=null">Volver a listado</button>
-              <div class="d-flex gap-2 justify-content-center">
-                <button class="btn btn-secondary flex-fill btn-half" data-bs-toggle="modal" data-bs-target="#modalEmpresa" (click)="abrirEditar(emp)">Ir a editar empresa</button>
-                <button class="btn btn-outline-secondary flex-fill btn-half" (click)="confirmarEliminarEmpresa(emp)">Eliminar empresa</button>
-              </div>
             </div>
           </div>
         </div>

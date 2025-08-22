@@ -18,7 +18,7 @@ export class EmpresasComponent implements OnInit {
   mostrarSugerencias = false;
   highlightedIndex = -1;
   private selectedEmpresaId: string | null = null;
-  viewMode: 'list' | 'detail' = 'list'; // detail view no longer used on 'Ver'
+  viewMode: 'list' | 'detail' = 'list';
   modalImagenUrl: string | null = null;
   modalEmpresa: Empresa | null = null;
   empresaForm: Empresa = { nombre: '', imagen: '' };
@@ -113,10 +113,7 @@ export class EmpresasComponent implements OnInit {
     this.modoForm = 'editar';
     this.empresaService.getOne(empresa._id!).subscribe(e => this.empresaForm = { ...e });
   }
-  verEmpresa(empresa: Empresa): void {
-    // Deprecated path for "Ver" replaced by image modal. Keeping for potential reuse.
-    this.empresaService.getOne(empresa._id!).subscribe(e => this.empresaSeleccionada = e);
-  }
+ 
   volverAlListado(): void {
     this.viewMode = 'list';
   }

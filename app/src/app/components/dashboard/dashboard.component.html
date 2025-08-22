@@ -3,186 +3,219 @@
     <main class="flex-grow-1">
       <div class="container-fluid p-3">
         <div class="row g-3 mb-3">
-          <div *ngFor="let tile of tiles" [class]="tile.title === 'Tests' ? 'col-12 col-md-12 col-lg-8 col-xl-6' : 'col-12 col-md-6 col-lg-4 col-xl-3'">
+          <div *ngFor="let tile of tiles"
+            [class]="tile.title === 'Tests' ? 'col-12 col-md-12 col-lg-8 col-xl-6' : 'col-12 col-md-6 col-lg-4 col-xl-3'">
             <div class="card shadow-sm rounded-1 tile-hover dashboard-card">
               <div class="card-header bg-primary-subtle text-primary-emphasis py-2 px-3">
                 <div class="fw-semibold">{{ tile.title }}</div>
               </div>
               <div class="card-body p-2">
-                <ul *ngIf="tile.title !== 'Empresas' && tile.title !== 'Categorías' && tile.title !== 'Tests' && tile.title !== 'Tareas' && tile.title !== 'Todo' && tile.title !== 'Video' && tile.title !== 'Logros'" class="list-unstyled small mb-2">
-                  <li *ngFor="let item of (tile.obs | async) | slice:0:3; trackBy: idx"
-                      class="d-flex justify-content-between">
-                    <span class="text-body">{{ getTileValue(tile, item) }}</span>
-                  </li>
-                  <li *ngIf="(tile.obs | async)?.length === 0" class="text-muted small">
-                    Sin {{ tile.title.toLowerCase() }}
-                  </li>
-                </ul>
-                <!-- Resumen para Video (mismo estilo que Empresas) -->
-                <div *ngIf="tile.title === 'Video'" class="row g-2 mb-2">
-                  <div class="col-12">
-                    <div class="bg-light border rounded-3 px-3 py-2">
-                      <span class="fw-semibold">Último video cargado:   </span>
-                      <ng-container *ngIf="(tile.obs | async) as v0; else noVideoLast">
-                        <span>{{ v0.length ? (v0[v0.length - 1]?.titulo || v0[v0.length - 1]?.nombre || '—') : '—' }}</span>
-                      </ng-container>
-                      <ng-template #noVideoLast>—</ng-template>
-                    </div>
-                  </div>
-                  <div class="col-12">
-                    <div class="bg-light border rounded-3 px-3 py-2">
-                      <span class="fw-semibold" *ngIf="isEditorFlag; else userVideosLabel">Total videos: </span>
-                      <ng-template #userVideosLabel><span class="fw-semibold">Tus videos por categoría: </span></ng-template>
-                      <ng-container *ngIf="(tile.obs | async) as v1; else noVideoTotal">
-                        <ng-container *ngIf="isEditorFlag; else filterUserVideos"> <span>{{ v1.length }}</span> </ng-container>
-                        <ng-template #filterUserVideos>
-                          <ng-container *ngIf="(currentUser$ | async) as cu"> {{ filterVideosForUser(v1, cu).length }} </ng-container>
-                        </ng-template>
-                      </ng-container>
-                      <ng-template #noVideoTotal>0</ng-template>
-                    </div>
-                  </div>
-                </div>
-                <!-- Resumen para Tests (en dos columnas: gráfico a la izquierda, datos a la derecha) -->
-                <div *ngIf="tile.title === 'Tests'" class="row g-3 mb-2 align-items-start">
-                  <div class="col-12 col-md-5 d-flex align-items-center gap-3">
-                    <div class="pie" [ngStyle]="getTestDonutStyles((tile.obs | async) || [])"></div>
-                    <div class="d-flex flex-column small">
-                      <div><span class="legend-box legend-brand"></span> Completados</div>
-                      <div><span class="legend-box bg-primary"></span> Pendientes</div>
-                      <div class="fw-semibold mt-1">Promedio: 
-                        <ng-container *ngIf="(tile.obs | async) as all; else zero">{{ getCompletedPercent(all) | number:'1.0-0' }}%</ng-container>
-                        <ng-template #zero>0%</ng-template>
+                <div [ngSwitch]="tile.title">
+                  <!-- Video -->
+                  <ng-container *ngSwitchCase="'Video'">
+                    <div class="row g-2 mb-2">
+                      <div class="col-12">
+                        <div class="bg-light border rounded-3 px-3 py-2">
+                          <span class="fw-semibold">Último video cargado: </span>
+                          <ng-container *ngIf="(tile.obs | async) as v0; else noVideoLast">
+                            <span>{{ v0.length ? (v0[v0.length - 1]?.titulo || v0[v0.length - 1]?.nombre || '—') : '—'
+                              }}</span>
+                          </ng-container>
+                          <ng-template #noVideoLast>—</ng-template>
+                        </div>
+                      </div>
+                      <div class="col-12">
+                        <div class="bg-light border rounded-3 px-3 py-2">
+                          <span class="fw-semibold" *ngIf="isEditorFlag; else userVideosLabel">Total videos: </span>
+                          <ng-template #userVideosLabel><span class="fw-semibold">Tus videos por categoría:
+                            </span></ng-template>
+                          <ng-container *ngIf="(tile.obs | async) as v1; else noVideoTotal">
+                            <ng-container *ngIf="isEditorFlag; else filterUserVideos"> <span>{{ v1.length }}</span>
+                            </ng-container>
+                            <ng-template #filterUserVideos>
+                              <ng-container *ngIf="(currentUser$ | async) as cu"> {{ videoHelper.filterVideosForUser(v1,
+                                cu).length }} </ng-container>
+                            </ng-template>
+                          </ng-container>
+                          <ng-template #noVideoTotal>0</ng-template>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div class="col-12 col-md-7">
-                    <div class="bg-light border rounded-3 px-3 py-2 mb-2">
-                      <span class="fw-semibold">Tests activos: </span>
-                      <ng-container *ngIf="(tile.obs | async) as t1; else noTests"> {{ t1.length }} </ng-container>
-                      <ng-template #noTests>0</ng-template>
-                    </div>
-                    <div class="bg-light border rounded-3 px-3 py-2 mb-2">
-                      <span class="fw-semibold">Preguntas totales: </span>
-                      <ng-container *ngIf="(tile.obs | async) as t2; else noQ"> {{ getTotalQuestions(t2) }} </ng-container>
-                      <ng-template #noQ>0</ng-template>
-                    </div>
-                    <div class="bg-light border rounded-3 px-3 py-2">
-                      <span class="fw-semibold">Total tests creados: </span>
-                      <ng-container *ngIf="(tile.obs | async) as t3; else noTotalTests"> {{ t3.length }} </ng-container>
-                      <ng-template #noTotalTests>0</ng-template>
-                    </div>
-                  </div>
-                </div>
-                <!-- Resumen para Empresas -->
-                <div *ngIf="tile.title === 'Empresas'" class="row g-2 mb-2">
-                  <div class="col-12">
-                    <div class="bg-light border rounded-3 px-3 py-2">
-                      <span class="fw-semibold">Última empresa creada: </span>
-                      <ng-container *ngIf="(tile.obs | async) as arr; else noEmpLast">
-                        <span>{{ arr.length ? (arr[arr.length - 1]?.nombre || '—') : '—' }}</span>
-                      </ng-container>
-                      <ng-template #noEmpLast>—</ng-template>
-                    </div>
-                  </div>
-                  <div class="col-12">
-                    <div class="bg-light border rounded-3 px-3 py-2">
-                      <span class="fw-semibold">Total empresas: </span>
-                      <ng-container *ngIf="(tile.obs | async) as arr2; else noEmpTotal">
-                        <span>{{ arr2.length }}</span>
-                      </ng-container>
-                      <ng-template #noEmpTotal>0</ng-template>
-                    </div>
-                  </div>
-                </div>
-                <!-- Resumen para Categorías (mismo estilo que Empresas) -->
-                <div *ngIf="tile.title === 'Categorías'" class="row g-2 mb-2">
-                  <div class="col-12">
-                    <div class="bg-light border rounded-3 px-3 py-2">
-                      <span class="fw-semibold">Última categoría creada: </span>
-                      <ng-container *ngIf="(tile.obs | async) as c0; else noCatLast">
-                        {{ c0.length ? (c0[c0.length - 1]?.nombre || '—') : '—' }}
-                      </ng-container>
-                      <ng-template #noCatLast>—</ng-template>
-                    </div>
-                  </div>
-                  <div class="col-12">
-                    <div class="bg-light border rounded-3 px-3 py-2">
-                      <span class="fw-semibold">Total categorías: </span>
-                      <ng-container *ngIf="(tile.obs | async) as c1; else noCatTotal"> {{ c1.length }} </ng-container>
-                      <ng-template #noCatTotal>0</ng-template>
-                    </div>
-                  </div>
-                  <div class="col-12">
-                    <div class="bg-light border rounded-3 px-3 py-2">
-                      <span class="fw-semibold">Categorías padre: </span>
-                      <ng-container *ngIf="(tile.obs | async) as c2; else noParent"> {{ getParentCount(c2) }} </ng-container>
-                      <ng-template #noParent>0</ng-template>
-                    </div>
-                  </div>
-                  <div class="col-12">
-                    <div class="bg-light border rounded-3 px-3 py-2">
-                      <span class="fw-semibold">Última modificación: </span>
-                      <ng-container *ngIf="(tile.obs | async) as c3; else noDate"> {{ getLastChangeDate(c3) || '—' }} </ng-container>
-                      <ng-template #noDate>—</ng-template>
-                    </div>
-                  </div>
-                </div>
-                <!-- Resumen para Logros -->
-                <div *ngIf="tile.title === 'Logros'" class="row g-2 mb-2">
-                  <div class="col-12">
-                    <div class="bg-light border rounded-3 px-3 py-2">
-                      <span class="fw-semibold">Total logros: </span>
-                      <ng-container *ngIf="(tile.obs | async) as l0; else noLogrosTotal"> {{ l0.length }} </ng-container>
-                      <ng-template #noLogrosTotal>0</ng-template>
-                    </div>
-                  </div>
-                  <div class="col-12" *ngIf="!isEditorFlag">
-                    <div class="bg-light border rounded-3 px-3 py-2">
-                      <span class="fw-semibold">Tus logros: </span>
-                      <ng-container *ngIf="(currentUser$ | async) as cu; else noUL">
-                        <ng-container *ngIf="(tile.obs | async) as allL">{{ getUserLogrosCount(cu, allL) }}</ng-container>
-                      </ng-container>
-                      <ng-template #noUL>0</ng-template>
-                    </div>
-                  </div>
-                  <div class="col-12">
-                    <div class="bg-light border rounded-3 px-3 py-2 d-flex justify-content-between">
-                      <div>
-                        <span class="fw-semibold">Activos: </span>
-                        <ng-container *ngIf="(tile.obs | async) as l1; else noAct"> {{ countActiveLogros(l1) }} </ng-container>
-                        <ng-template #noAct>0</ng-template>
+                  </ng-container>
+                  <!-- Tests -->
+                  <ng-container *ngSwitchCase="'Tests'">
+                    <div class="row g-3 mb-2 align-items-start">
+                      <div class="col-12 col-md-5 d-flex align-items-center gap-3">
+                        <div class="pie" [ngStyle]="testsHelper.getTestDonutStyles((tile.obs | async) || [])"></div>
+                        <div class="d-flex flex-column small">
+                          <div><span class="legend-box legend-brand"></span> Completados</div>
+                          <div><span class="legend-box bg-primary"></span> Pendientes</div>
+                          <div class="fw-semibold mt-1">Promedio:
+                            <ng-container *ngIf="(tile.obs | async) as all; else zero">{{
+                              testsHelper.getCompletedPercent(all) | number:'1.0-0' }}%</ng-container>
+                            <ng-template #zero>0%</ng-template>
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <span class="fw-semibold">Inactivos: </span>
-                        <ng-container *ngIf="(tile.obs | async) as l2; else noInact"> {{ countInactiveLogros(l2) }} </ng-container>
-                        <ng-template #noInact>0</ng-template>
+                      <div class="col-12 col-md-7">
+                        <div class="bg-light border rounded-3 px-3 py-2 mb-2">
+                          <span class="fw-semibold">Tests activos: </span>
+                          <ng-container *ngIf="(tile.obs | async) as t1; else noTests"> {{ t1.length }} </ng-container>
+                          <ng-template #noTests>0</ng-template>
+                        </div>
+                        <div class="bg-light border rounded-3 px-3 py-2 mb-2">
+                          <span class="fw-semibold">Preguntas totales: </span>
+                          <ng-container *ngIf="(tile.obs | async) as t2; else noQ"> {{ testsHelper.getTotalQuestions(t2)
+                            }} </ng-container>
+                          <ng-template #noQ>0</ng-template>
+                        </div>
+                        <div class="bg-light border rounded-3 px-3 py-2">
+                          <span class="fw-semibold">Total tests creados: </span>
+                          <ng-container *ngIf="(tile.obs | async) as t3; else noTotalTests"> {{ t3.length }}
+                          </ng-container>
+                          <ng-template #noTotalTests>0</ng-template>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div class="col-12">
-                    <div class="bg-light border rounded-3 px-3 py-2">
-                      <span class="fw-semibold">Último logro entregado: </span>
-                      <ng-container *ngIf="(tile.obs | async) as l3; else noRecentSingle">
-                        <ng-container *ngIf="(users$ | async) as users; else noRecentSingle">
-                          {{ getMostRecentLogroDisplay(l3, users) || '—' }}
-                        </ng-container>
-                      </ng-container>
-                      <ng-template #noRecentSingle>—</ng-template>
+                  </ng-container>
+
+                  <!-- Empresas -->
+                  <ng-container *ngSwitchCase="'Empresas'">
+                    <div class="row g-2 mb-2">
+                      <div class="col-12">
+                        <div class="bg-light border rounded-3 px-3 py-2">
+                          <span class="fw-semibold">Última empresa creada: </span>
+                          <ng-container *ngIf="(tile.obs | async) as arr; else noEmpLast">
+                            <span>{{ arr.length ? (arr[arr.length - 1]?.nombre || '—') : '—' }}</span>
+                          </ng-container>
+                          <ng-template #noEmpLast>—</ng-template>
+                        </div>
+                      </div>
+                      <div class="col-12">
+                        <div class="bg-light border rounded-3 px-3 py-2">
+                          <span class="fw-semibold">Total empresas: </span>
+                          <ng-container *ngIf="(tile.obs | async) as arr2; else noEmpTotal">
+                            <span>{{ arr2.length }}</span>
+                          </ng-container>
+                          <ng-template #noEmpTotal>0</ng-template>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <div class="col-12">
-                    <div class="bg-light border rounded-3 px-3 py-2">
-                      <span class="fw-semibold">Usuario con más logros: </span>
-                      <ng-container *ngIf="(users$ | async) as us; else noUserTop">
-                        <ng-container *ngIf="getTopUserByLogros(us) as topUser; else noUserTop">{{ topUser.name }} ({{ topUser.count }})</ng-container>
-                      </ng-container>
-                      <ng-template #noUserTop>—</ng-template>
+                  </ng-container>
+                  <!-- Categorías -->
+                  <ng-container *ngSwitchCase="'Categorías'">
+                    <div class="row g-2 mb-2">
+                      <div class="col-12">
+                        <div class="bg-light border rounded-3 px-3 py-2">
+                          <span class="fw-semibold">Última categoría creada: </span>
+                          <ng-container *ngIf="(tile.obs | async) as c0; else noCatLast">
+                            {{ c0.length ? (c0[c0.length - 1]?.nombre || '—') : '—' }}
+                          </ng-container>
+                          <ng-template #noCatLast>—</ng-template>
+                        </div>
+                      </div>
+                      <div class="col-12">
+                        <div class="bg-light border rounded-3 px-3 py-2">
+                          <span class="fw-semibold">Total categorías: </span>
+                          <ng-container *ngIf="(tile.obs | async) as c1; else noCatTotal"> {{ c1.length }}
+                          </ng-container>
+                          <ng-template #noCatTotal>0</ng-template>
+                        </div>
+                      </div>
+                      <div class="col-12">
+                        <div class="bg-light border rounded-3 px-3 py-2">
+                          <span class="fw-semibold">Categorías padre: </span>
+                          <ng-container *ngIf="(tile.obs | async) as c2; else noParent"> {{
+                            categoriasHelper.getParentCount(c2) }} </ng-container>
+                          <ng-template #noParent>0</ng-template>
+                        </div>
+                      </div>
+                      <div class="col-12">
+                        <div class="bg-light border rounded-3 px-3 py-2">
+                          <span class="fw-semibold">Última modificación: </span>
+                          <ng-container *ngIf="(tile.obs | async) as c3; else noDate"> {{
+                            categoriasHelper.getLastChangeDate(c3) || '—' }} </ng-container>
+                          <ng-template #noDate>—</ng-template>
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  </ng-container>
+                  <!-- Logros -->
+                  <ng-container *ngSwitchCase="'Logros'">
+                    <div class="row g-2 mb-2">
+                      <div class="col-12">
+                        <div class="bg-light border rounded-3 px-3 py-2">
+                          <span class="fw-semibold">Total logros: </span>
+                          <ng-container *ngIf="(tile.obs | async) as l0; else noLogrosTotal"> {{ l0.length }}
+                          </ng-container>
+                          <ng-template #noLogrosTotal>0</ng-template>
+                        </div>
+                      </div>
+                      <div class="col-12" *ngIf="!isEditorFlag">
+                        <div class="bg-light border rounded-3 px-3 py-2">
+                          <span class="fw-semibold">Tus logros: </span>
+                          <ng-container *ngIf="(currentUser$ | async) as cu; else noUL">
+                            <ng-container *ngIf="(tile.obs | async) as allL">{{ logrosHelper.getUserLogrosCount(cu,
+                              allL) }}</ng-container>
+                          </ng-container>
+                          <ng-template #noUL>0</ng-template>
+                        </div>
+                      </div>
+                      <div class="col-12">
+                        <div class="bg-light border rounded-3 px-3 py-2 d-flex justify-content-between">
+                          <div>
+                            <span class="fw-semibold">Activos: </span>
+                            <ng-container *ngIf="(tile.obs | async) as l1; else noAct"> {{
+                              logrosHelper.countActiveLogros(l1) }} </ng-container>
+                            <ng-template #noAct>0</ng-template>
+                          </div>
+                          <div>
+                            <span class="fw-semibold">Inactivos: </span>
+                            <ng-container *ngIf="(tile.obs | async) as l2; else noInact"> {{
+                              logrosHelper.countInactiveLogros(l2) }} </ng-container>
+                            <ng-template #noInact>0</ng-template>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="col-12">
+                        <div class="bg-light border rounded-3 px-3 py-2">
+                          <span class="fw-semibold">Último logro entregado: </span>
+                          <ng-container *ngIf="(tile.obs | async) as l3; else noRecentSingle">
+                            <ng-container *ngIf="(users$ | async) as users; else noRecentSingle">
+                              {{ logrosHelper.getMostRecentLogroDisplay(l3, users) || '—' }}
+                            </ng-container>
+                          </ng-container>
+                          <ng-template #noRecentSingle>—</ng-template>
+                        </div>
+                      </div>
+                      <div class="col-12">
+                        <div class="bg-light border rounded-3 px-3 py-2">
+                          <span class="fw-semibold">Usuario con más logros: </span>
+                          <ng-container *ngIf="(users$ | async) as us; else noUserTop">
+                            <ng-container *ngIf="logrosHelper.getTopUserByLogros(us) as topUser; else noUserTop">{{
+                              topUser.name }} ({{ topUser.count }})</ng-container>
+                          </ng-container>
+                          <ng-template #noUserTop>—</ng-template>
+                        </div>
+                      </div>
+                    </div>
+                  </ng-container>
+                  <!-- Default: lista simple -->
+                  <ng-container *ngSwitchDefault>
+                    <ul class="list-unstyled small mb-2">
+                      <li *ngFor="let item of (tile.obs | async) | slice:0:3; trackBy: idx"
+                        class="d-flex justify-content-between">
+                        <span class="text-body">{{ getTileValue(tile, item) }}</span>
+                      </li>
+                      <li *ngIf="(tile.obs | async)?.length === 0" class="text-muted small">
+                        Sin {{ tile.title.toLowerCase() }}
+                      </li>
+                    </ul>
+                  </ng-container>
                 </div>
                 <div class="mt-2 d-flex justify-content-end">
-                  <a *ngIf="tile.link" [routerLink]="tile.link" class="link-primary text-decoration-none small d-inline-flex align-items-center">
+                  <a *ngIf="tile.link" [routerLink]="tile.link"
+                    class="link-primary text-decoration-none small d-inline-flex align-items-center">
                     Ir a {{ tile.title }} <i class="bi bi-chevron-right ms-1"></i>
                   </a>
                 </div>
@@ -192,4 +225,4 @@
         </div>
       </div>
     </main>
-</div>
+  </div>

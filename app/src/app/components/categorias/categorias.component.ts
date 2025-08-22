@@ -27,6 +27,24 @@ export class CategoriasComponent {
     this.cargarTodasCategorias();
   }
 
+  // --- Helpers usados por Dashboard ---
+  static getLastChangeDate(categories: any[] | null | undefined): string {
+    if (!Array.isArray(categories) || categories.length === 0) return '';
+    for (let i = categories.length - 1; i >= 0; i--) {
+      const c = categories[i] as any;
+      const date = c?.updatedAt || c?.createdAt;
+      if (date) {
+        try { return new Date(date).toLocaleDateString(); } catch { return String(date); }
+      }
+    }
+    return '';
+  }
+
+  static getParentCount(categories: any[] | null | undefined): number {
+    if (!Array.isArray(categories) || categories.length === 0) return 0;
+    return categories.filter(c => !c?.categoriaPadre).length;
+  }
+
   cargarCategorias(): void {
     this.categoriaService.getAll(this.categoriasPage, this.categoriasLimit, this.categoriasNombreFiltro)
       .subscribe({

@@ -63,6 +63,14 @@ export class VideoComponent implements OnInit {
       });
     });
   }
+
+  // --- Helpers usados por Dashboard ---
+  static filterVideosForUser(videos: any[] | null | undefined, user: any | null | undefined): any[] {
+    if (!Array.isArray(videos)) return [];
+    const categoriaId = (user as any)?.categoriaId || null;
+    if (!categoriaId) return videos;
+    return videos.filter(v => String((v as any)?.categoriaId || '') === String(categoriaId));
+  }
 }
 
 

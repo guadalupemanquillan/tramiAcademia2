@@ -1,21 +1,21 @@
-<aside class="sidebar-container">
-  <div class="p-3">
+<aside class="d-flex flex-column vh-100 bg-light p-3" style="width: 300px;">
+  <!-- Menú -->
+  <nav class="nav nav-pills flex-column mb-3">
+    <a *ngFor="let item of filteredMenu"
+       class="nav-link d-flex align-items-center text-dark"
+       [routerLink]="item.route"
+       routerLinkActive="active"
+       [routerLinkActiveOptions]="{ exact: true }">
+      <i class="bi me-2" [ngClass]="item.icon"></i>
+      <span>{{ item.label }}</span>
+    </a>
+  </nav>
 
-    <!-- Menú filtrado por rol -->
-    <nav class="nav flex-column sidebar-nav mb-3">
-      <a *ngFor="let item of filteredMenu"
-         class="nav-link sidebar-item"
-         [routerLink]="item.route"
-         routerLinkActive="active">
-        <i class="bi me-2 sidebar-icon" [ngClass]="item.icon"></i>
-        <span class="sidebar-label">{{ item.label }}</span>
-      </a>
-    </nav>
+  <hr class="mt-auto">
 
-    <hr class="mt-5">
-    <div class="small text-muted mt-4 pt-2 sidebar-meta">
-      <div>Sesión activa</div>
-      <div>Rol: <strong>{{ role || 'usuario' }}</strong></div>
-    </div>
+  <!-- Información de sesión -->
+  <div class="small text-muted mt-4 pt-2">
+    <div>Sesión activa</div>
+    <div>Rol: <strong>{{ role || 'usuario' }}</strong></div>
   </div>
 </aside>

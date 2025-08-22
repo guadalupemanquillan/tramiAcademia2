@@ -18,23 +18,10 @@
   font-weight: 600;
 }
 
-/* Sidebar minimal theming */
-.sidebar { width: 260px; }/* Sidebar más ancho para alinear icono + texto */
-.sidebar-container { background-color: #eef1f5d3; /* gris empresarial suave */ }
-.sidebar-item { color: #343a40; }
-.sidebar-item .sidebar-icon { color: #495057; }
-.sidebar-item .sidebar-label { color: inherit; }
-.sidebar-item.active, .sidebar-item:hover { background-color: var(--bs-primary); color: #fff; }
-.sidebar-item:hover .sidebar-icon,
-.sidebar-item.active .sidebar-icon { color: #fff; }
-
 /* Fondo difuminado solo para dashboard */
 .dashboard-gradient {
   background: linear-gradient(180deg, #d7ecff 0%, #f8fbff 40%, #ffffff 100%);
 }
-
-/* Sidebar debe cubrir toda la página independientemente del contenido */
-.sidebar-container { min-height: 100vh; height: 100%; }
 
 /* Utilidad para ratio más bajo (miniatura más pequeña) */
 .ratio-slim { --bs-aspect-ratio: 12%; }
@@ -78,9 +65,9 @@
   background-color: var(--bs-primary-bg-subtle, #e7f1ff);
   color: var(--bs-primary-text-emphasis, #0d3b66);
 }
-.modal .modal-title { font-weight: 600; }
-.modal .btn-close { opacity: .8; }
-.modal-backdrop.show { opacity: .5; }
+// .modal .modal-title { font-weight: 600; }
+// .modal .btn-close { opacity: .8; }
+// .modal-backdrop.show { opacity: .5; }
 
 /* Dashboard donut chart (minimal CSS, reutiliza colores de Bootstrap) */
 .donut {

@@ -42,6 +42,26 @@ export class TestsComponent implements OnInit {
     public authService: AuthService
   ) { }
 
+  // --- Helpers usados por Dashboard ---
+  static getTotalQuestions(tests: any[] | null | undefined): number {
+    if (!Array.isArray(tests) || tests.length === 0) return 0;
+    return tests.reduce((sum, t) => sum + ((t?.preguntas ?? []).length), 0);
+  }
+
+  static getTestDonutStyles(tests: any[] | null | undefined): { [k: string]: string } {
+    const total = Array.isArray(tests) ? tests.length : 0;
+    if (!total) return { background: 'conic-gradient(var(--bs-secondary) 0 360deg)' };
+    const completed = tests!.filter(t => (t?.logros ?? []).length > 0).length;
+    const pctCompleted = (completed / total) * 360;
+    return { background: `conic-gradient(#15297c 0 ${pctCompleted}deg, var(--bs-primary) ${pctCompleted}deg 360deg)` };
+  }
+
+  static getCompletedPercent(tests: any[] | null | undefined): number {
+    if (!Array.isArray(tests) || tests.length === 0) return 0;
+    const completed = tests.filter(t => (t?.logros ?? []).length > 0).length;
+    return (completed / tests.length) * 100;
+  }
+
   ngOnInit(): void {
     this.cargarTests();
     this.cargarLogrosDisponibles();
