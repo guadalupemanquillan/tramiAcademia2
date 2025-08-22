@@ -1,19 +1,4 @@
 
-.login-card {/* Tarjeta del login */
-  max-width: 360px;
-  width: 100%;
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
-}
-.login-input {/* Inputs con estilo uniforme */
-  background: rgba(255, 255, 255, 0.1); /* bg-opacity-10 */
-  color: white;
-}
-.login-input:focus {/* Ajustes opcionales para hover/focus */
-  background: rgba(255, 255, 255, 0.2);
-  box-shadow: 0 0 5px rgba(49, 51, 192, 0.315);
-  color: white;
-}
 .btn-lg {/* Botón grande login*/
   font-weight: 600;
 }
