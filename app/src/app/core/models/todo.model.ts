@@ -1,13 +1,13 @@
 export interface TodoTareaBase {
-  tareaId: string;
-  completada?: boolean;
+  nombreTarea: string;
 }
 
 export interface TodoItem {
   _id?: string;
   titulo: string;
-  tareaBase: TodoTareaBase[];
+  tareasBase: TodoTareaBase[];
   categoriaId?: string | null;
+  completada?: boolean;// solo en front 
 }
 
 

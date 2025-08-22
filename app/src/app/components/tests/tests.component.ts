@@ -26,6 +26,7 @@ export class TestsComponent implements OnInit {
 
   logrosDisponibles: Logros[] = [];
   selectedLogroId: string | null = null;
+  selectedLogros: { nombre: string; iconoUrl: string; _id?: string }[] = [];
   numPreguntas: number = 1;
 
   private completedKeyPrefix = 'completedTests_';
@@ -118,16 +119,13 @@ export class TestsComponent implements OnInit {
         opcionesRespuesta: p.opcionesRespuesta.filter(o => !!o?.trim()),
         respuestaCorrecta: p.respuestaCorrecta
       })),
-      logros: (() => {
-        if (!this.selectedLogroId) return [];
-        const lg = this.logrosDisponibles.find(x => x._id === this.selectedLogroId);
-        return lg ? [{ nombre: lg.nombre, iconoUrl: lg.iconoUrl }] : [];
-      })()
+      logros: this.selectedLogros.map(l => ({ nombre: l.nombre, iconoUrl: l.iconoUrl }))
     };
     this.testService.create(payload).subscribe({
       next: () => {
         this.nuevoTest = { preguntas: [{ tituloPregunta: '', opcionesRespuesta: ['', ''], respuestaCorrecta: '' }], logros: [] };
         this.selectedLogroId = null;
+        this.selectedLogros = [];
         this.numPreguntas = this.nuevoTest.preguntas.length;
         (document.getElementById('crearTestCerrarBtn') as HTMLButtonElement)?.click();
         this.cargarTests();
@@ -135,6 +133,22 @@ export class TestsComponent implements OnInit {
       },
       error: () => this.alert.error('No se pudo crear el test.')
     });
+  }
+
+  // --- Selección múltiple de logros (Crear Test) ---
+  agregarLogroSeleccionado(): void {
+    if (!this.selectedLogroId) return;
+    const lg = this.logrosDisponibles.find(x => x._id === this.selectedLogroId);
+    if (!lg) return;
+    // Evitar duplicados por id o nombre
+    const existe = this.selectedLogros.some(s => (lg._id && s._id === lg._id) || s.nombre === lg.nombre);
+    if (existe) return;
+    this.selectedLogros.push({ nombre: lg.nombre, iconoUrl: lg.iconoUrl, _id: lg._id });
+  }
+
+  quitarLogroSeleccionado(index: number): void {
+    if (index < 0 || index >= this.selectedLogros.length) return;
+    this.selectedLogros.splice(index, 1);
   }
 
   abrirEditarTest(t: TestItem): void {

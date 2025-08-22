@@ -1,70 +1,65 @@
 <div class="card shadow-sm mx-4">
   <div class="card-body">
     <div class="d-flex justify-content-between align-items-center mb-3">
-      <h5 class="card-title mb-0">Resumen</h5>
-      <button *ngIf="authService.role === 'editor'" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCrearTodo">Nuevo Todo</button>
+      <h5 class="card-title mb-0">Lista de tareas</h5>
+      <button *ngIf="authService.role === 'editor'" class="btn btn-primary" data-bs-toggle="modal"
+        data-bs-target="#modalCrearTodo">
+        Nuevo Todo
+      </button>
     </div>
 
     <div class="row g-3">
-      <div class="col-12 col-xl-6">
-        <div class="card border-0 shadow-sm rounded-3">
-          <div class="card-body">
-            <div class="d-flex align-items-center justify-content-between mb-2">
-              <h6 class="mb-0">Tareas</h6>
-              <span class="badge bg-primary">{{ todos.length }}</span>
-            </div>
-            <div *ngIf="todos.length === 0" class="text-muted small">No hay tareas.</div>
-            <div *ngFor="let t of todos" class="p-3 border rounded mb-2 d-flex align-items-center justify-content-between">
-              <div>
-                <div class="fw-semibold">{{ t.titulo || 'Sin título' }}</div>
-                <div class="small text-muted">{{ t.tareaBase.length }} subtareas</div>
-              </div>
-              <div class="d-flex align-items-center gap-2">
-                <span class="badge bg-secondary">To do</span>
-                <button *ngIf="authService.role === 'editor'" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalEditarTodo" (click)="abrirEditar(t)">Editar</button>
-                <button *ngIf="authService.role === 'editor'" class="btn btn-sm btn-outline-danger" (click)="confirmarEliminar(t)">Eliminar</button>
-              </div>
-            </div>
+      <!-- Checklist tiene tests, videos, y tareas base -->
+      <h6 class="mb-2">-</h6>
+      <div *ngIf="checklist.length === 0" class="text-muted small">Sin tareas en checklist.</div>
+      <ul class="list-group">
+        <li *ngFor="let c of checklist; trackBy: trackCode"
+          class="list-group-item d-flex justify-content-between align-items-center">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" [checked]="c.completed" (change)="toggleChecklist(c)"
+              [id]="'chk-' + c.code">
+            <label class="form-check-label" [for]="'chk-' + c.code">
+              {{ c.title }} <span class="badge bg-secondary ms-2">{{ c.type }}</span>
+            </label>
           </div>
-        </div>
-      </div>
+        </li>
+      </ul>
 
-      <div class="col-12 col-xl-6">
-        <div class="card border-0 shadow-sm rounded-3">
-          <div class="card-body">
-            <div class="d-flex align-items-center justify-content-between mb-2">
-              <h6 class="mb-0">Tests</h6>
-              <span class="badge bg-primary">{{ tests.length }}</span>
-            </div>
-            <div *ngIf="tests.length === 0" class="text-muted small">No hay tests.</div>
-            <div *ngFor="let x of tests" class="p-3 border rounded mb-2 d-flex align-items-center justify-content-between">
-              <div>
-                <div class="fw-semibold">{{ (x.preguntas || []).length }} preguntas</div>
-                <div class="small text-muted">Logros ligados: {{ (x.logros || []).length }}</div>
-              </div>
-              <div>
-                <a class="btn btn-sm btn-outline-primary" routerLink="/admin/tests">Ver</a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 </div>
-
-<!-- Modal crear -->
+<!-- Crear Todo -->
 <div class="modal fade" id="modalCrearTodo" tabindex="-1" aria-hidden="true" *ngIf="authService.role === 'editor'">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Crear Todo</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="crearTodoCerrarBtn"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
         <div class="mb-3">
           <label class="form-label">Título</label>
           <input class="form-control" [(ngModel)]="nuevoTodo.titulo">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Categoría</label>
+          <select class="form-select" [(ngModel)]="nuevoTodo.categoriaId">
+            <option [ngValue]="null">Sin categoría</option>
+            <option *ngFor="let c of categorias" [ngValue]="c._id">{{ c.nombre }}</option>
+          </select>
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Tareas del Todo</label>
+          <div class="input-group mb-2">
+            <input class="form-control" #tname placeholder="Nombre de tarea (video/test/otro)">
+            <button type="button" class="btn btn-outline-primary" (click)="addTareaBaseFromInput(tname)">Agregar</button>
+          </div>
+          <ul class="list-group">
+            <li *ngFor="let tb of (nuevoTodo.tareasBase || []); let i=index" class="list-group-item d-flex justify-content-between">
+              <span>{{ tb.nombreTarea }}</span>
+              <button type="button" class="btn btn-sm btn-outline-danger" (click)="removeTareaBase(i)">Quitar</button>
+            </li>
+          </ul>
         </div>
       </div>
       <div class="modal-footer">
@@ -73,15 +68,15 @@
       </div>
     </div>
   </div>
-  </div>
+</div>
 
-<!-- Modal editar -->
+<!-- Modal Editar Todo -->
 <div class="modal fade" id="modalEditarTodo" tabindex="-1" aria-hidden="true" *ngIf="authService.role === 'editor'">
   <div class="modal-dialog">
     <div class="modal-content" *ngIf="todoEditar as t">
       <div class="modal-header">
         <h5 class="modal-title">Editar Todo</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="editarTodoCerrarBtn"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
         <div class="mb-3">
@@ -96,5 +91,3 @@
     </div>
   </div>
 </div>
-
-
