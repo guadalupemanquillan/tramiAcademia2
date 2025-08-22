@@ -1,0 +1,88 @@
+<div class="card shadow-sm mx-4">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="card-title mb-0">Videos</h5>
+      <button *ngIf="authService.role === 'editor'" class="btn btn-primary" data-bs-toggle="modal"
+        data-bs-target="#modalCrearVideo">Nuevo Video</button>
+    </div>
+ <div class="table-responsive" *ngIf="!loading">
+      <table class="table table-striped table-sm">
+        <thead>
+          <tr>
+            <th>Título</th>
+            <th>URL</th>
+            <th class="text-end">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let v of videos">
+            <td>{{ v.titulo }}</td>
+            <td class="text-truncate" style="max-width: 280px;"><a [href]="v.urlYouTube" target="_blank"
+                rel="noopener noreferrer">{{ v.urlYouTube }}</a></td>
+            <td class="text-end">
+              <ng-container *ngIf="authService.role === 'editor'; else userVideoAction">
+                <button class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal"
+                  data-bs-target="#modalEditarVideo" (click)="abrirEditar(v)">Editar</button>
+                <button class="btn btn-sm btn-outline-danger" (click)="confirmarEliminar(v)">Eliminar</button>
+              </ng-container>
+              <ng-template #userVideoAction>
+                <a class="btn btn-sm btn-success" [href]="v.urlYouTube" target="_blank"
+                  rel="noopener noreferrer">Ver</a>
+              </ng-template>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<div class="modal fade" id="modalCrearVideo" tabindex="-1" aria-hidden="true" *ngIf="authService.role === 'editor'">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Crear Video</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"
+          id="crearVideoCerrarBtn"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">Título</label>
+          <input class="form-control" [(ngModel)]="nuevoVideo.titulo">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">URL YouTube</label>
+          <input class="form-control" [(ngModel)]="nuevoVideo.urlYouTube">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" (click)="crearVideo()">Crear</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal fade" id="modalEditarVideo" tabindex="-1" aria-hidden="true" *ngIf="authService.role === 'editor'">
+  <div class="modal-dialog">
+    <div class="modal-content" *ngIf="videoEditar as v">
+      <div class="modal-header">
+        <h5 class="modal-title">Editar Video</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"
+          id="editarVideoCerrarBtn"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">Título</label>
+          <input class="form-control" [(ngModel)]="v.titulo">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">URL YouTube</label>
+          <input class="form-control" [(ngModel)]="v.urlYouTube">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" (click)="guardarEdicion()">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>

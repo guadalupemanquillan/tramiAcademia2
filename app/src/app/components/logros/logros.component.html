@@ -1,0 +1,84 @@
+<div class="card shadow-sm mx-4">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="card-title mb-0">Logros</h5>
+      <button *ngIf="authService.role === 'editor'" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCrearLogro">Nuevo Logro</button>
+    </div>
+
+    <div class="table-responsive" *ngIf="!loading">
+      <table class="table table-striped table-sm">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Icono</th>
+            <th class="text-end" *ngIf="authService.role === 'editor'">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let lg of logros">
+            <td>{{ lg.nombre }}</td>
+            <td>
+              <img *ngIf="lg.iconoUrl" [src]="lg.iconoUrl" alt="icono" style="height:24px">
+            </td>
+            <td class="text-end" *ngIf="authService.role === 'editor'">
+              <button class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal"
+                data-bs-target="#modalEditarLogro" (click)="abrirEditarLogro(lg)">Editar</button>
+              <button class="btn btn-sm btn-outline-danger" (click)="confirmarEliminarLogro(lg)">Eliminar</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<div class="modal fade" id="modalCrearLogro" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Crear Logro</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"
+          id="crearLogroCerrarBtn"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">Nombre</label>
+          <input class="form-control" [(ngModel)]="nuevoLogro.nombre">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Icono (URL)</label>
+          <input class="form-control" [(ngModel)]="nuevoLogro.iconoUrl">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" (click)="crearLogro()">Crear</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="modalEditarLogro" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content" *ngIf="logroEditar as lg">
+      <div class="modal-header">
+        <h5 class="modal-title">Editar Logro</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"
+          id="editarLogroCerrarBtn"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">Nombre</label>
+          <input class="form-control" [(ngModel)]="lg.nombre">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Icono (URL)</label>
+          <input class="form-control" [(ngModel)]="lg.iconoUrl">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" (click)="guardarEdicionLogro()">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>

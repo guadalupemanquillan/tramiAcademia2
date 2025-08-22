@@ -1,0 +1,21 @@
+<aside class="sidebar-container">
+  <div class="p-3">
+
+    <!-- Menú filtrado por rol -->
+    <nav class="nav flex-column sidebar-nav mb-3">
+      <a *ngFor="let item of filteredMenu"
+         class="nav-link sidebar-item"
+         [routerLink]="item.route"
+         routerLinkActive="active">
+        <i class="bi me-2 sidebar-icon" [ngClass]="item.icon"></i>
+        <span class="sidebar-label">{{ item.label }}</span>
+      </a>
+    </nav>
+
+    <hr class="mt-5">
+    <div class="small text-muted mt-4 pt-2 sidebar-meta">
+      <div>Sesión activa</div>
+      <div>Rol: <strong>{{ role || 'usuario' }}</strong></div>
+    </div>
+  </div>
+</aside>

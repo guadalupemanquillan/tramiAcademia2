@@ -1,0 +1,100 @@
+<div class="card shadow-sm mx-4">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="card-title mb-0">Resumen</h5>
+      <button *ngIf="authService.role === 'editor'" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCrearTodo">Nuevo Todo</button>
+    </div>
+
+    <div class="row g-3">
+      <div class="col-12 col-xl-6">
+        <div class="card border-0 shadow-sm rounded-3">
+          <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h6 class="mb-0">Tareas</h6>
+              <span class="badge bg-primary">{{ todos.length }}</span>
+            </div>
+            <div *ngIf="todos.length === 0" class="text-muted small">No hay tareas.</div>
+            <div *ngFor="let t of todos" class="p-3 border rounded mb-2 d-flex align-items-center justify-content-between">
+              <div>
+                <div class="fw-semibold">{{ t.titulo || 'Sin título' }}</div>
+                <div class="small text-muted">{{ t.tareaBase.length }} subtareas</div>
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-secondary">To do</span>
+                <button *ngIf="authService.role === 'editor'" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalEditarTodo" (click)="abrirEditar(t)">Editar</button>
+                <button *ngIf="authService.role === 'editor'" class="btn btn-sm btn-outline-danger" (click)="confirmarEliminar(t)">Eliminar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-xl-6">
+        <div class="card border-0 shadow-sm rounded-3">
+          <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h6 class="mb-0">Tests</h6>
+              <span class="badge bg-primary">{{ tests.length }}</span>
+            </div>
+            <div *ngIf="tests.length === 0" class="text-muted small">No hay tests.</div>
+            <div *ngFor="let x of tests" class="p-3 border rounded mb-2 d-flex align-items-center justify-content-between">
+              <div>
+                <div class="fw-semibold">{{ (x.preguntas || []).length }} preguntas</div>
+                <div class="small text-muted">Logros ligados: {{ (x.logros || []).length }}</div>
+              </div>
+              <div>
+                <a class="btn btn-sm btn-outline-primary" routerLink="/admin/tests">Ver</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal crear -->
+<div class="modal fade" id="modalCrearTodo" tabindex="-1" aria-hidden="true" *ngIf="authService.role === 'editor'">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Crear Todo</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="crearTodoCerrarBtn"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">Título</label>
+          <input class="form-control" [(ngModel)]="nuevoTodo.titulo">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" (click)="crearTodo()">Crear</button>
+      </div>
+    </div>
+  </div>
+  </div>
+
+<!-- Modal editar -->
+<div class="modal fade" id="modalEditarTodo" tabindex="-1" aria-hidden="true" *ngIf="authService.role === 'editor'">
+  <div class="modal-dialog">
+    <div class="modal-content" *ngIf="todoEditar as t">
+      <div class="modal-header">
+        <h5 class="modal-title">Editar Todo</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="editarTodoCerrarBtn"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">Título</label>
+          <input class="form-control" [(ngModel)]="t.titulo">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" (click)="guardarEdicion()">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+

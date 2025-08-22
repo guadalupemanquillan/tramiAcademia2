@@ -1,0 +1,14 @@
+<header class="bg-white shadow-sm border rounded-2 my-2 mx-4">
+  <div class="card-body d-flex align-items-center justify-content-between p-3">
+    <h6 class="mb-0">
+      Bienvenido <span class="fw-bold">{{ displayName }}</span> a
+      <span class="fw-bold">TramiAcademia</span>
+    </h6>
+    <div class="d-flex align-items-center gap-2">
+      <span class="badge rounded-pill text-bg-secondary">
+        Perfil {{ roleLabel }}
+      </span>
+      <button class="btn btn-outline-secondary btn-sm" (click)="logout()">Cerrar sesión</button>
+    </div>
+  </div>
+</header>
