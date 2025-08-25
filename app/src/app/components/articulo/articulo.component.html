@@ -1,0 +1,47 @@
+<div class="container mt-4">
+  <h2>Gestión de Artículos</h2>
+
+  <!-- Formulario de creación -->
+  <div class="mb-4">
+    <h4>Nuevo Artículo</h4>
+    <form (ngSubmit)="crearArticulo()" #formArticulo="ngForm">
+      <input type="text" [(ngModel)]="nuevoArticulo.titulo" name="titulo" placeholder="Título" required class="form-control mb-2">
+      <textarea [(ngModel)]="nuevoArticulo.texto" name="texto" placeholder="Texto" required class="form-control mb-2"></textarea>
+      <input type="text" [(ngModel)]="nuevoArticulo.autor" name="autor" placeholder="Autor" class="form-control mb-2">
+      <input type="text" [(ngModel)]="nuevoArticulo.categoriaId" name="categoriaId" placeholder="CategoriaId" class="form-control mb-2">
+      <button class="btn btn-primary" type="submit">Crear</button>
+    </form>
+  </div>
+
+  <!-- Lista de artículos -->
+  <div *ngIf="articulos.length > 0">
+    <h4>Lista de Artículos</h4>
+    <ul class="list-group">
+      <li *ngFor="let articulo of articulos" class="list-group-item">
+        <!-- Modo visualización -->
+        <div *ngIf="!editandoActivo || editando._id !== articulo._id">
+          <h5>{{ articulo.titulo }}</h5>
+          <p>{{ articulo.texto }}</p>
+          <small>Autor: {{ articulo.autor }} | Categoría: {{ articulo.categoriaId }}</small>
+          <br>
+          <button class="btn btn-sm btn-warning me-2" (click)="editarArticulo(articulo)">Editar</button>
+          <button class="btn btn-sm btn-danger" (click)="eliminarArticulo(articulo._id!)">Eliminar</button>
+        </div>
+
+        <!-- Modo edición -->
+        <div *ngIf="editandoActivo && editando._id === articulo._id">
+          <input type="text" [(ngModel)]="editando.titulo" name="tituloEdit" class="form-control mb-2">
+          <textarea [(ngModel)]="editando.texto" name="textoEdit" class="form-control mb-2"></textarea>
+          <input type="text" [(ngModel)]="editando.autor" name="autorEdit" class="form-control mb-2">
+          <input type="text" [(ngModel)]="editando.categoriaId" name="categoriaEdit" class="form-control mb-2">
+          <button class="btn btn-sm btn-success me-2" (click)="actualizarArticulo()">Guardar</button>
+          <button class="btn btn-sm btn-secondary" (click)="cancelarEdicion()">Cancelar</button>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <div *ngIf="articulos.length === 0">
+    <p>No hay artículos registrados.</p>
+  </div>
+</div>

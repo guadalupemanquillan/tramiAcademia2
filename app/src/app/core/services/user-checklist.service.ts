@@ -4,13 +4,8 @@ import { TestService } from './test.service';
 import { VideoService } from './video.service';
 import { TodoService } from './todo.service';
 import { TareasService } from './tareas.service';
+import {ChecklistItem} from '../models/todo.model';
 
-export interface ChecklistItem {
-  code: string;
-  title: string;
-  type: 'test' | 'video' | 'custom';
-  completed: boolean;
-}
 
 @Injectable({ providedIn: 'root' })
 export class UserChecklistService {

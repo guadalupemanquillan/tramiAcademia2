@@ -6,9 +6,10 @@ import { TodoService } from '../../core/services/todo.service';
 import { TodoItem } from '../../core/models/todo.model';
 import { AlertService } from '../../core/services/alert.service';
 import { AuthService } from '../../core/services/auth.service';
-import { UserChecklistService, ChecklistItem } from '../../core/services/user-checklist.service';
+import { UserChecklistService} from '../../core/services/user-checklist.service';
 import { Categoria } from '../../core/models/categoria.model';
 import { CategoriaService } from '../../core/services/categoria.service';
+import{ChecklistItem } from '../../core/models/todo.model';
 
 @Component({
   selector: 'app-todo',

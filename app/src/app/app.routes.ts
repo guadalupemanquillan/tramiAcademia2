@@ -58,6 +58,10 @@ export const routes: Routes = [
       {
         path: 'logro',
         loadComponent: () => import('./components/logros/logros.component').then(m => m.LogrosComponent)
+      },
+      {
+        path: 'articulos',
+        loadComponent: () => import('./components/articulo/articulo.component').then(m => m.ArticuloComponent)
       }
     ]
   },
@@ -86,6 +90,10 @@ export const routes: Routes = [
       {
         path: 'logro',
         loadComponent: () => import('./components/logros/logros.component').then(m => m.LogrosComponent)
+      },
+      {
+        path: 'articulos',
+        loadComponent: () => import('./components/articulo/articulo.component').then(m => m.ArticuloComponent)
       }
     ]
   },
