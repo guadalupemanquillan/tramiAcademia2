@@ -1,7 +1,7 @@
 const User = require('../../models/user.model');
 
 exports.getOneUserService = async (id) => {
-  const user = await User.findById(id);
+  const user = await User.findById(id).populate('logros');
   return user;
 };
  

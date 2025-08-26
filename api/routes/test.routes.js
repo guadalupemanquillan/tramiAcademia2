@@ -25,9 +25,21 @@ const {
   verificarTestController,
 } = require("../controllers/test/verificarTest.controller");
 
+const {
+  checkTestDisponibilidadController,
+} = require("../controllers/test/checkTestDisponibilidad.controller");
+
+const {
+  completeTestController,
+} = require("../controllers/test/completeTest.controller");
+
 // POST
 testRouter.post("/", authorizeRoles('editor'), createNewTestController);
 testRouter.post("/verificarTest/:userId/:testId",verificarTestController)
+// Disponibilidad del test para un usuario
+testRouter.get("/:testId/disponible", checkTestDisponibilidadController);
+// Completar test (aprobado/logros/tarea)
+testRouter.post("/complete/:userId/:testId", completeTestController);
 // DELETE
 testRouter.delete("/:id", authorizeRoles('editor'), deleteOneTestController);
 // GET

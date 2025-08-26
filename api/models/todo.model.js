@@ -15,6 +15,10 @@ const todoSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Categoria",
   },
+  activo: {
+    type: Boolean,
+    default: true
+  }
 });
 
 const Todo = mongoose.model("Todo", todoSchema);

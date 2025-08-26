@@ -9,6 +9,7 @@ export interface TodoItem {
   tareasBase: TodoTareaBase[];
   categoriaId?: string | null;
   completada?: boolean;
+  activo?: boolean;
 }
 export interface ChecklistItem {
   code: string;

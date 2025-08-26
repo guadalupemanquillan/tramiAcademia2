@@ -9,6 +9,7 @@ import { Categoria } from '../../core/models/categoria.model';
 import { CategoriaService } from '../../core/services/categoria.service';
 import { AuthService } from '../../core/services/auth.service';
 import { AlertService } from '../../core/services/alert.service';
+import { TareasService } from '../../core/services/tareas.service';
 
 @Component({
     selector: 'app-articulos',
@@ -41,7 +42,8 @@ export class ArticuloComponent implements OnInit {
         private articuloService: ArticuloService,
         private categoriaService: CategoriaService,
         private authService: AuthService,
-        private alert: AlertService
+        private alert: AlertService,
+        private tareas: TareasService
     ) { }
 
     ngOnInit(): void {
@@ -101,6 +103,16 @@ export class ArticuloComponent implements OnInit {
 
     verArticulo(articulo: Articulo): void {
         this.articuloVer = articulo;
+    }
+
+    marcarArticuloLeido(articulo: Articulo | null): void {
+        const userId = this.authService.id;
+        if (!articulo || !userId) { this.alert.warning('Debes iniciar sesión.'); return; }
+        const nombre = `Articulo leído: ${articulo.titulo}`;
+        this.tareas.create({ usuarioId: userId, tareaCompletada: nombre } as any).subscribe({
+            next: () => this.alert.success('Marcado como leído.'),
+            error: () => this.alert.error('No se pudo registrar la lectura.')
+        });
     }
 
     eliminarArticulo(id: string): void {

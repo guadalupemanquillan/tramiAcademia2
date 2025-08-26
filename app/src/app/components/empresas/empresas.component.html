@@ -7,13 +7,18 @@
           <div class="col-12 col-lg-7 d-flex align-items-center gap-3">
             <h5 class="card-title mb-0">Buscar empresa</h5>
             <div class="position-relative flex-grow-1">
-              <input type="text" class="form-control" placeholder="Buscar por nombre" [(ngModel)]="empresasFiltro" (input)="onBuscarInput()" (focus)="onBuscarInput()" (keydown)="onBuscarKeyDown($event)" (blur)="mostrarSugerencias=false">
+              <input type="text" class="form-control" placeholder="Buscar por nombre" [(ngModel)]="empresasFiltro"
+                (input)="onBuscarInput()" (focus)="onBuscarInput()" (keydown)="onBuscarKeyDown($event)"
+                (blur)="mostrarSugerencias=false">
               <div class="dropdown-menu show w-100" *ngIf="mostrarSugerencias && sugerencias.length">
-                <button type="button" class="dropdown-item" *ngFor="let sug of sugerencias; let i = index" [class.active]="i === highlightedIndex" (mousedown)="seleccionarEmpresaSug(sug)">{{ sug.nombre }}</button>
+                <button type="button" class="dropdown-item" *ngFor="let sug of sugerencias; let i = index"
+                  [class.active]="i === highlightedIndex" (mousedown)="seleccionarEmpresaSug(sug)">{{ sug.nombre
+                  }}</button>
               </div>
             </div>
             <div class="ms-auto">
-              <button class="btn btn-brand" data-bs-toggle="modal" data-bs-target="#modalEmpresa" (click)="abrirCrear()">Crear nueva empresa</button>
+              <button class="btn btn-brand" data-bs-toggle="modal" data-bs-target="#modalEmpresa"
+                (click)="abrirCrear()">Crear nueva empresa</button>
             </div>
           </div>
           <div class="col-12 col-lg-5">
@@ -53,16 +58,23 @@
             </thead>
             <tbody>
               <tr *ngFor="let e of empresasFiltradas; trackBy: trackEmpresa" class="cursor-pointer">
-                <td class="w-25 align-middle"><div class="text-truncate">{{ e.nombre }}</div></td>
+                <td class="w-25 align-middle">
+                  <div class="text-truncate">{{ e.nombre }}</div>
+                </td>
                 <td class="w-25">
                   <div class="ratio ratio-slim bg-light rounded d-flex align-items-center justify-content-center">
                     <img *ngIf="e.imagen" [src]="e.imagen" alt="imagen" class="w-100 h-100 object-fit-contain">
                   </div>
                 </td>
                 <td class="text-end">
-                  <button class="btn btn-link text-dark p-0 me-2" title="Detalles" (click)="$event.stopPropagation(); openDetalleModal(e)"><i class="bi bi-eye-fill"></i></button>
-                  <button class="btn btn-link text-dark p-0 me-2" title="Editar" data-bs-toggle="modal" data-bs-target="#modalEmpresa" (click)="$event.stopPropagation(); abrirEditar(e)"><i class="bi bi-pencil-fill"></i></button>
-                  <button class="btn btn-link text-dark p-0" title="Eliminar" (click)="$event.stopPropagation(); confirmarEliminarEmpresa(e)"><i class="bi bi-trash3-fill"></i></button>
+                  <button class="btn btn-link text-dark p-0 me-2" title="Detalles"
+                    (click)="$event.stopPropagation(); openDetalleModal(e)"><i class="bi bi-eye-fill"></i></button>
+                  <button class="btn btn-link text-dark p-0 me-2" title="Editar" data-bs-toggle="modal"
+                    data-bs-target="#modalEmpresa" (click)="$event.stopPropagation(); abrirEditar(e)"><i
+                      class="bi bi-pencil-fill"></i></button>
+                  <button class="btn btn-link text-dark p-0" title="Eliminar"
+                    (click)="$event.stopPropagation(); confirmarEliminarEmpresa(e)"><i
+                      class="bi bi-trash3-fill"></i></button>
                 </td>
               </tr>
             </tbody>
@@ -98,7 +110,8 @@
     </div>
   </div>
   <!-- Modal Detalle Empresa -->
-  <div class="modal fade" id="modalImagenEmpresa" tabindex="-1" aria-hidden="true" [class.show]="modalEmpresa" [style.display]="modalEmpresa ? 'block' : 'none'" (click)="onModalBackdropClick($event)">
+  <div class="modal fade" id="modalImagenEmpresa" tabindex="-1" aria-hidden="true" [class.show]="modalEmpresa"
+    [style.display]="modalEmpresa ? 'block' : 'none'" (click)="onModalBackdropClick($event)">
     <div class="modal-dialog modal-dialog-centered modal-sm" (click)="$event.stopPropagation()">
       <div class="modal-content">
         <div class="modal-header bg-primary-subtle text-primary-emphasis">
@@ -107,7 +120,8 @@
         </div>
         <div class="modal-body">
           <div *ngIf="modalEmpresa as emp">
-            <div class="mb-2 bg-light border rounded-3 px-3 py-2"><span class="fw-semibold">Nombre:</span> {{ emp.nombre }}</div>
+            <div class="mb-2 bg-light border rounded-3 px-3 py-2"><span class="fw-semibold">Nombre:</span> {{ emp.nombre
+              }}</div>
             <div class="bg-light border rounded-3 empresa-detail-image p-2" *ngIf="emp.imagen">
               <img [src]="emp.imagen" alt="imagen" class="img-fluid h-100 w-100 object-fit-contain">
             </div>

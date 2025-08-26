@@ -12,6 +12,10 @@ const userSchema = new mongoose.Schema({
     enum: ["usuario", "editor"],
     default: "usuario"
   },
+  empresaId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Empresa",
+  },
   password: {
     type: String,
   },

@@ -6,6 +6,7 @@ export interface TestPregunta {
 
 export interface TestItem {
   _id?: string;
+  nombre?: string;
   preguntas: TestPregunta[];
   logros?: { nombre: string; iconoUrl: string }[];
 }

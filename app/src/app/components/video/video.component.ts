@@ -8,6 +8,7 @@ import { AlertService } from '../../core/services/alert.service';
 import { AuthService } from '../../core/services/auth.service';
 import { Categoria } from '../../core/models/categoria.model';
 import { CategoriaService } from '../../core/services/categoria.service';
+import { TareasService } from '../../core/services/tareas.service';
 
 @Component({
   selector: 'app-video',
@@ -22,8 +23,11 @@ export class VideoComponent implements OnInit {
   loading = true;
   categorias: Categoria[] = [];
   categoriaSeleccionada: string | null = null;
+  private ytPlayer: any = null;
+  private lastAllowedTime = 0;
+  private endedVideos = new Set<string>();
 
-  constructor(private videoService: VideoService, private cdr: ChangeDetectorRef, private alert: AlertService, public authService: AuthService, private categoriaService: CategoriaService) {}
+  constructor(private videoService: VideoService, private cdr: ChangeDetectorRef, private alert: AlertService, public authService: AuthService, private categoriaService: CategoriaService, private tareas: TareasService) { }
 
   ngOnInit(): void {
     this.cargarVideos();
@@ -94,6 +98,95 @@ export class VideoComponent implements OnInit {
 
   trackVideo(index: number, v: VideoItem): string | number { return v?._id || index; }
   trackCategoria(index: number, c: Categoria): string | number { return c?._id || index; }
+
+  onVideoEnded(v: VideoItem): void {
+    const id = (v as any)?._id as string | undefined;
+    if (id) this.endedVideos.add(String(id));
+    this.cdr.detectChanges();
+  }
+
+  abrirPlayer(v: VideoItem): void {
+    const videoId = this.extraerYouTubeId(v.urlYouTube || '');
+    if (!videoId) { this.alert.warning('URL de YouTube inválida.'); return; }
+    (window as any)['onYouTubeIframeAPIReady'] = () => this.crearPlayer(videoId, v);
+    if ((window as any)['YT']?.Player) {
+      this.crearPlayer(videoId, v);
+    }
+    const modalEl = document.getElementById('modalVerVideoUsuario');
+    if (modalEl && typeof window !== 'undefined') {
+      const anyWin = window as any;
+      const modal = anyWin.bootstrap?.Modal?.getOrCreateInstance
+        ? anyWin.bootstrap.Modal.getOrCreateInstance(modalEl)
+        : new anyWin.bootstrap.Modal(modalEl);
+      modal.show();
+    }
+  }
+
+  private crearPlayer(videoId: string, v: VideoItem): void {
+    const self = this;
+    this.lastAllowedTime = 0;
+    if (this.ytPlayer && typeof this.ytPlayer.destroy === 'function') {
+      try { this.ytPlayer.destroy(); } catch {}
+      this.ytPlayer = null;
+    }
+    const anyWin = window as any;
+    this.ytPlayer = new anyWin.YT.Player('yt-player', {
+      videoId,
+      playerVars: { controls: 1, disablekb: 1, modestbranding: 1 },
+      events: {
+        onReady: (e: any) => {
+          e.target.playVideo();
+          self.lastAllowedTime = 0;
+          self.vigilarSeek(e.target, v);
+        },
+        onStateChange: (e: any) => {
+          // 0 = ended
+          if (e.data === 0) {
+            self.onVideoEnded(v);
+          }
+        }
+      }
+    });
+  }
+
+  private vigilarSeek(player: any, v: VideoItem): void {
+    const check = () => {
+      if (!player || typeof player.getCurrentTime !== 'function') return;
+      const current = player.getCurrentTime();
+      // Si el usuario se adelanta más de 1.5s, lo regresamos al último punto permitido
+      if (current > this.lastAllowedTime + 1.5) {
+        player.seekTo(this.lastAllowedTime, true);
+      } else {
+        this.lastAllowedTime = Math.max(this.lastAllowedTime, current);
+      }
+      // terminar cuando finaliza
+      const state = player.getPlayerState?.();
+      if (state === 0) return; // ended
+      requestAnimationFrame(check);
+    };
+    requestAnimationFrame(check);
+  }
+
+  private extraerYouTubeId(url: string): string | null {
+    if (!url) return null;
+    const m = url.match(/(?:v=|\.be\/|embed\/)([A-Za-z0-9_-]{11})/);
+    return m && m[1] ? m[1] : null;
+  }
+
+  isVideoEnded(v: VideoItem): boolean {
+    const id = (v as any)?._id as string | undefined;
+    return !!(id && this.endedVideos.has(String(id)));
+  }
+
+  marcarVideoVisto(v: VideoItem): void {
+    const userId = this.authService.id;
+    if (!userId) { this.alert.warning('Debes iniciar sesión.'); return; }
+    const nombre = `Video visualizado: ${v.titulo}`;
+    this.tareas.create({ usuarioId: userId, tareaCompletada: nombre } as any).subscribe({
+      next: () => this.alert.success('Marcado como visto.'),
+      error: () => this.alert.error('No se pudo registrar la visualización.')
+    });
+  }
 }
 
 

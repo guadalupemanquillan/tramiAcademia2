@@ -1,13 +1,9 @@
 <aside class="d-flex flex-column vh-100 bg-light p-3" style="width: 300px;">
   <!-- Menú -->
   <nav class="nav nav-pills flex-column mb-3">
-    <a *ngFor="let item of filteredMenu"
-       class="nav-link d-flex align-items-center"
-       [routerLink]="item.route"
-       routerLinkActive="active"
-       #rla="routerLinkActive"
-       [routerLinkActiveOptions]="{ exact: true }"
-       [ngClass]="{ 'text-dark': !rla.isActive, 'text-white': rla.isActive }">
+    <a *ngFor="let item of filteredMenu" class="nav-link d-flex align-items-center" [routerLink]="item.route"
+      routerLinkActive="active" #rla="routerLinkActive" [routerLinkActiveOptions]="{ exact: true }"
+      [ngClass]="{ 'text-dark': !rla.isActive, 'text-white': rla.isActive }">
       <i class="bi me-2" [ngClass]="item.icon"></i>
       <span>{{ item.label }}</span>
     </a>

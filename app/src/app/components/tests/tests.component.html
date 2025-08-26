@@ -10,6 +10,7 @@
       <table class="table table-striped table-sm" *ngIf="authService.role === 'editor'; else userTable">
         <thead>
           <tr>
+            <th>Nombre</th>
             <th>Preguntas</th>
             <th>Logros</th>
             <th class="text-end">Acciones</th>
@@ -17,6 +18,7 @@
         </thead>
         <tbody>
           <tr *ngFor="let t of tests">
+            <td>{{ t.nombre || '—' }}</td>
             <td>{{ t.preguntas.length }}</td>
             <td>{{ t.logros?.length ?? 0 }}</td>
             <td class="text-end">
@@ -68,7 +70,8 @@
             <ul class="list-unstyled mb-0">
               <li *ngFor="let t of tests" class="d-flex justify-content-between align-items-center py-2 border-bottom">
                 <span class="small text-muted">{{ t.preguntas.length }} preguntas</span>
-                <button *ngIf="buttonText" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalResponderTest" (click)="buttonClick(t)">{{ buttonText }}</button>
+                <button *ngIf="buttonText" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
+                  data-bs-target="#modalResponderTest" (click)="buttonClick(t)">{{ buttonText }}</button>
                 <span *ngIf="!buttonText" class="badge bg-success">Completado</span>
               </li>
             </ul>
@@ -83,18 +86,21 @@
   <div *ngFor="let p of test.preguntas; let i=index; trackBy: trackPregunta" class="border rounded p-3 mb-3">
     <div class="mb-2">
       <label class="form-label">Título de la pregunta</label>
-      <input class="form-control" [(ngModel)]="p.tituloPregunta" [ngModelOptions]="{updateOn: 'blur'}" placeholder="Título de la pregunta" title="Título de la pregunta">
+      <input class="form-control" [(ngModel)]="p.tituloPregunta" [ngModelOptions]="{updateOn: 'blur'}"
+        placeholder="Título de la pregunta" title="Título de la pregunta">
     </div>
     <div class="mb-2">
       <label class="form-label">Opciones de respuesta</label>
       <div *ngFor="let o of p.opcionesRespuesta; let j=index; trackBy: trackOpcion" class="input-group mb-1">
-        <input class="form-control" [(ngModel)]="p.opcionesRespuesta[j]" [ngModelOptions]="{updateOn: 'blur'}" placeholder="Opción de respuesta" title="Opción de respuesta">
+        <input class="form-control" [(ngModel)]="p.opcionesRespuesta[j]" [ngModelOptions]="{updateOn: 'blur'}"
+          placeholder="Opción de respuesta" title="Opción de respuesta">
       </div>
       <button class="btn btn-sm btn-outline-secondary" (click)="agregarOpcion(i, edicion)">Agregar opción</button>
     </div>
     <div class="mb-2">
       <label class="form-label">Respuesta correcta</label>
-      <input class="form-control" [(ngModel)]="p.respuestaCorrecta" [ngModelOptions]="{updateOn: 'blur'}" placeholder="Respuesta correcta" title="Respuesta correcta">
+      <input class="form-control" [(ngModel)]="p.respuestaCorrecta" [ngModelOptions]="{updateOn: 'blur'}"
+        placeholder="Respuesta correcta" title="Respuesta correcta">
     </div>
   </div>
 </ng-template>
@@ -109,6 +115,10 @@
       </div>
       <div class="modal-body">
         <div class="row g-3 mb-3">
+          <div class="col-12">
+            <label class="form-label">Nombre del test</label>
+            <input class="form-control" [(ngModel)]="nuevoTest.nombre" placeholder="Nombre del test" title="Nombre del test">
+          </div>
           <div class="col-6">
             <label class="form-label">Asignar logro (opcional)</label>
             <div class="input-group">
@@ -122,17 +132,20 @@
           <div class="col-6">
             <label class="form-label">Logros seleccionados</label>
             <ul class="list-group">
-              <li *ngFor="let sl of selectedLogros; let i = index" class="list-group-item d-flex justify-content-between align-items-center">
+              <li *ngFor="let sl of selectedLogros; let i = index"
+                class="list-group-item d-flex justify-content-between align-items-center">
                 <div class="d-flex align-items-center gap-2">
                   <img *ngIf="sl.iconoUrl" [src]="sl.iconoUrl" alt="icon" width="20" height="20">
                   <span>{{ sl.nombre }}</span>
                 </div>
-                <button type="button" class="btn btn-sm btn-outline-danger" (click)="quitarLogroSeleccionado(i)">Quitar</button>
+                <button type="button" class="btn btn-sm btn-outline-danger"
+                  (click)="quitarLogroSeleccionado(i)">Quitar</button>
               </li>
               <li *ngIf="selectedLogros.length === 0" class="list-group-item text-muted small">Ninguno</li>
             </ul>
           </div>
         </div>
+        <!-- Editor de preguntas en creación -->
         <ng-container *ngTemplateOutlet="preguntasForm; context:{ test: nuevoTest, edicion: false }"></ng-container>
         <div>
           <button type="button" class="btn btn-sm btn-outline-primary" (click)="agregarPregunta(false)">Agregar otra
@@ -157,7 +170,35 @@
           id="editarTestCerrarBtn"></button>
       </div>
       <div class="modal-body">
-        <ng-container *ngTemplateOutlet="preguntasForm; context:{ test: testEditar, edicion: true }"></ng-container>
+        <div class="mb-3">
+          <label class="form-label">Nombre del test</label>
+          <input class="form-control" [(ngModel)]="testEditar!.nombre" placeholder="Nombre del test" title="Nombre del test">
+        </div>
+        <!-- Editor de preguntas en edición -->
+        <div *ngFor="let p of testEditar?.preguntas; let i=index; trackBy: trackPregunta" class="border rounded p-3 mb-3">
+          <div class="mb-2 d-flex align-items-start gap-2">
+            <div class="flex-grow-1">
+              <label class="form-label">Título de la pregunta</label>
+              <input class="form-control" [(ngModel)]="p.tituloPregunta" [ngModelOptions]="{updateOn: 'blur'}"
+                placeholder="Título de la pregunta" title="Título de la pregunta">
+            </div>
+            <button type="button" class="btn btn-outline-danger mt-4" (click)="eliminarPregunta(i, true)" title="Eliminar pregunta">Eliminar</button>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Opciones de respuesta</label>
+            <div *ngFor="let o of p.opcionesRespuesta; let j=index; trackBy: trackOpcion" class="input-group mb-1">
+              <input class="form-control" [(ngModel)]="p.opcionesRespuesta[j]" [ngModelOptions]="{updateOn: 'blur'}"
+                placeholder="Opción de respuesta" title="Opción de respuesta">
+              <button type="button" class="btn btn-outline-danger" (click)="eliminarOpcion(i, j, true)" title="Eliminar opción">&times;</button>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-secondary" (click)="agregarOpcion(i, true)">Agregar opción</button>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Respuesta correcta</label>
+            <input class="form-control" [(ngModel)]="p.respuestaCorrecta" [ngModelOptions]="{updateOn: 'blur'}"
+              placeholder="Respuesta correcta" title="Respuesta correcta">
+          </div>
+        </div>
         <div>
           <button type="button" class="btn btn-sm btn-outline-primary" (click)="agregarPregunta(true)">Agregar otra
             pregunta</button>
@@ -190,7 +231,8 @@
             </div>
           </div>
           <ng-template #sinOpciones>
-            <input class="form-control" [(ngModel)]="respuestasUsuario[i]" placeholder="Escribe tu respuesta" title="Respuesta libre">
+            <input class="form-control" [(ngModel)]="respuestasUsuario[i]" placeholder="Escribe tu respuesta"
+              title="Respuesta libre">
           </ng-template>
         </div>
       </div>

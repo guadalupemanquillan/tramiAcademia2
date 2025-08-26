@@ -16,7 +16,7 @@ interface MenuItem {
   imports: [CommonModule, RouterModule]
 })
 export class SidebarComponent {
-  constructor(public authService: AuthService) {}
+  constructor(public authService: AuthService) { }
   adminMenu: MenuItem[] = [
     { label: 'Dashboard', icon: 'bi-house-fill', route: '/dashboard/admin' },
     { label: 'Empresas', icon: 'bi-building-fill', route: '/admin/empresa' },
@@ -27,8 +27,9 @@ export class SidebarComponent {
     { label: 'Video', icon: 'bi-camera-video-fill', route: '/admin/video' },
     { label: 'Logros', icon: 'bi-trophy-fill', route: '/admin/logro' },
     { label: 'Artículos', icon: 'bi-journal-text', route: '/admin/articulos' },
+    { label: 'Usuarios', icon: 'bi-people-fill', route: '/users' },
   ];
-  
+
   userMenu: MenuItem[] = [
     { label: 'Dashboard', icon: 'bi-house-fill', route: '/dashboard/usuario' },
     { label: 'Tests', icon: 'bi-clipboard2-check-fill', route: '/usuario/test' },

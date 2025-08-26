@@ -1,22 +1,7 @@
-.btn-lg {/* Botón grande login*/
-  font-weight: 600;
-}
-/* Fondo difuminado solo para dashboard */
-.dashboard-gradient {
+.dashboard-gradient {/* Fondo difuminado solo para dashboard */
   background: linear-gradient(180deg, #d7ecff 0%, #f8fbff 40%, #ffffff 100%);
 }
-/* Empresas: tamaño compacto del panel de detalle */
-.empresa-detail-card { width: 340px; }
-.empresa-detail-card { margin-left: auto; margin-right: auto; }
-@media (max-width: 576px) {
-  .empresa-detail-card { width: 100%; }
-}
-.empresa-detail-image {
-  height: 180px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+
 /* Botón azul sólido de marca (sin afectar el primary de Bootstrap para el sidebar) */
 .btn-brand {
   background-color: #15297c;

@@ -113,7 +113,7 @@ export class EmpresasComponent implements OnInit {
     this.modoForm = 'editar';
     this.empresaService.getOne(empresa._id!).subscribe(e => this.empresaForm = { ...e });
   }
- 
+
   volverAlListado(): void {
     this.viewMode = 'list';
   }
@@ -154,7 +154,7 @@ export class EmpresasComponent implements OnInit {
     const last = this.empresas[this.empresas.length - 1];
     return last?.nombre || '—';
   }
- cerrarModal(): void {
+  cerrarModal(): void {
     (document.querySelector('.modal.show .btn-close') as HTMLButtonElement)?.click();
   }
 }

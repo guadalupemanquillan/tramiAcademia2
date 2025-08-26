@@ -22,7 +22,12 @@ export class TodoService {
   }
 
   getOne(id: string): Observable<TodoItem> {
-    return this.http.get<TodoItem>(`${this.apiUrl}/${id}`);
+    return this.http.get<TodoItem>(`${this.apiUrl}/${id}`).pipe(
+      map((t: any) => ({
+        ...t,
+        categoriaId: (t?.categoriaId && typeof t.categoriaId === 'object') ? (t.categoriaId?._id ?? null) : (t?.categoriaId ?? null),
+      }))
+    );
   }
 
   create(todo: Partial<TodoItem>): Observable<TodoItem> {

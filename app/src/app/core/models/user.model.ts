@@ -3,6 +3,8 @@ export interface User {
   nombre?: string;
   nombreCompleto?: string;
   roles?: 'usuario' | 'editor';
+  password?: string;
+  empresaId?: string;
   logros?: string[];
   createdAt?: string;
   updatedAt?: string;

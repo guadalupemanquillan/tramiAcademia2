@@ -4,7 +4,8 @@ const {
 
 exports.getAllTareasController = async (req, res) => {
   try {
-    const tareas = await getAllTareasService();
+    const { usuarioId } = req.query || {};
+    const tareas = await getAllTareasService({ usuarioId });
     res.json(tareas);
   } catch (error) {
     console.error(error);

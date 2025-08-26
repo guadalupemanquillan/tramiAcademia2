@@ -1,6 +1,4 @@
-const {
-  verificarTestService,
-} = require("../../services/test/verificarTest.service");
+const { completeTestService } = require("../../services/test/completeTest.service");
 
 exports.verificarTestController = async (req, res) => {
   try {
@@ -8,7 +6,7 @@ exports.verificarTestController = async (req, res) => {
 
     const { respuestas } = req.body;
 
-    const resultado = await verificarTestService({
+    const resultado = await completeTestService({
       userId,
       testId,
       respuestas,

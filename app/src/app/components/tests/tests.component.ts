@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
 import { TestService } from '../../core/services/test.service';
+import { UserProgressService } from '../../core/services/user-progress.service';
 import { TestItem } from '../../core/models/test.model';
 import { AlertService } from '../../core/services/alert.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -23,7 +24,7 @@ export class TestsComponent implements OnInit {
   testsPendientes: TestItem[] = [];
   testsRealizados: TestItem[] = [];
 
-  nuevoTest: TestItem = { preguntas: [{ tituloPregunta: '', opcionesRespuesta: ['', ''], respuestaCorrecta: '' }], logros: [] };
+  nuevoTest: TestItem = { nombre: '', preguntas: [{ tituloPregunta: '', opcionesRespuesta: ['', ''], respuestaCorrecta: '' }], logros: [] };
   testEditar: Partial<TestItem> | null = null;
   loading: boolean = true;
 
@@ -45,7 +46,8 @@ export class TestsComponent implements OnInit {
     private logrosService: LogrosService,
     public authService: AuthService,
     private todoService: TodoService,
-    private tareasService: TareasService
+    private tareasService: TareasService,
+    private progress: UserProgressService
   ) { }
 
   // --- Helpers usados por Dashboard ---
@@ -65,19 +67,33 @@ export class TestsComponent implements OnInit {
     this.cargarTests();
     this.cargarLogrosDisponibles();
     this.numPreguntas = this.nuevoTest.preguntas.length;
+    // Recargar cuando haya cambios (create/update/delete)
+    this.testService.changes$.subscribe(() => this.cargarTests());
   }
 
   cargarTests(): void {
     this.loading = true;
-    this.testService.getAll().subscribe({
-      next: tests => {
-        this.tests = tests;
-        this.recalcularListasUsuario();
-        this.loading = false;
-        this.cdr.detectChanges();
-      },
-      error: () => this.loading = false
-    });
+    if (this.authService.role === 'editor') {
+      this.testService.getAll().subscribe({
+        next: tests => {
+          this.tests = tests;
+          this.recalcularListasUsuario();
+          this.loading = false;
+          this.cdr.detectChanges();
+        },
+        error: () => this.loading = false
+      });
+    } else {
+      this.progress.getEligibleTestsForCurrentUser().subscribe({
+        next: tests => {
+          this.tests = tests;
+          this.recalcularListasUsuario();
+          this.loading = false;
+          this.cdr.detectChanges();
+        },
+        error: () => this.loading = false
+      });
+    }
   }
 
   cargarLogrosDisponibles(): void {
@@ -102,6 +118,22 @@ export class TestsComponent implements OnInit {
     test?.preguntas?.[indexPregunta]?.opcionesRespuesta.push('');
   }
 
+  eliminarPregunta(indexPregunta: number, enEdicion: boolean = false) {
+    const test = enEdicion ? this.testEditar : this.nuevoTest;
+    if (!test?.preguntas) return;
+    if (test.preguntas.length <= 1) return; // mantener al menos una
+    test.preguntas.splice(indexPregunta, 1);
+    if (!enEdicion) this.numPreguntas = test.preguntas.length;
+  }
+
+  eliminarOpcion(indexPregunta: number, indexOpcion: number, enEdicion: boolean = false) {
+    const test = enEdicion ? this.testEditar : this.nuevoTest;
+    const opciones = test?.preguntas?.[indexPregunta]?.opcionesRespuesta;
+    if (!opciones) return;
+    if (opciones.length <= 1) return; // al menos una opción
+    opciones.splice(indexOpcion, 1);
+  }
+
   actualizarNumeroPreguntas(): void {
     const n = Math.max(1, Math.floor(this.numPreguntas || 1));
     this.numPreguntas = n;
@@ -112,6 +144,7 @@ export class TestsComponent implements OnInit {
 
   crearTest(): void {
     const payload: TestItem = {
+      nombre: this.nuevoTest.nombre,
       preguntas: this.nuevoTest.preguntas.map(p => ({
         tituloPregunta: p.tituloPregunta,
         opcionesRespuesta: p.opcionesRespuesta.filter(o => !!o?.trim()),
@@ -121,7 +154,7 @@ export class TestsComponent implements OnInit {
     };
     this.testService.create(payload).subscribe({
       next: () => {
-        this.nuevoTest = { preguntas: [{ tituloPregunta: '', opcionesRespuesta: ['', ''], respuestaCorrecta: '' }], logros: [] };
+        this.nuevoTest = { nombre: '', preguntas: [{ tituloPregunta: '', opcionesRespuesta: ['', ''], respuestaCorrecta: '' }], logros: [] };
         this.selectedLogroId = null;
         this.selectedLogros = [];
         this.numPreguntas = this.nuevoTest.preguntas.length;
@@ -200,7 +233,7 @@ export class TestsComponent implements OnInit {
 
         // Auto-crear una tarea completada al iniciar el test
         const code = `test:start:${t._id}`;
-        this.tareasService.create({ usuarioId: userId, tareaCompletada: code } as any).subscribe({ next: () => {}, error: () => {} });
+        this.tareasService.create({ usuarioId: userId, tareaCompletada: code } as any).subscribe({ next: () => { }, error: () => { } });
 
         this.testAResponder = t;
         this.respuestasUsuario = (t.preguntas || []).map(() => '');
@@ -245,15 +278,14 @@ export class TestsComponent implements OnInit {
         const aprobado: boolean = !!res?.resultado?.aprobado;
         const nombresLogros = Array.isArray(res?.resultado?.logrosOtorgados)
           ? res.resultado.logrosOtorgados
-              .map((l: any) => (l && typeof l.nombre === 'string' ? l.nombre : ''))
-              .filter((n: string) => n.length > 0)
-              .join(', ')
+            .map((l: any) => (l && typeof l.nombre === 'string' ? l.nombre : ''))
+            .filter((n: string) => n.length > 0)
+            .join(', ')
           : '';
 
         if (aprobado) {
           this.alert.success(nombresLogros ? `¡Aprobado! Logros obtenidos: ${nombresLogros}` : '¡Aprobado! Sin nuevos logros.');
-          // Registrar tarea completada para checklist de test
-          this.tareasService.create({ usuarioId: userId, tareaCompletada: `test:${testId}` } as any).subscribe({ next: () => {}, error: () => {} });
+          // El backend ya crea la tarea con el nombre del test, evitamos duplicar
           this.recalcularListasUsuario();
         } else {
           this.alert.info('No aprobado. ¡Sigue intentando, puedes lograrlo!');

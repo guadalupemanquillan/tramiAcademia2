@@ -8,8 +8,8 @@
 
     <form [formGroup]="loginForm" (ngSubmit)="login()">
       <div class="mb-3">
-        <input type="text" formControlName="username" placeholder="Usuario"
-          class="form-control form-control-lg" autocomplete="username" />
+        <input type="text" formControlName="username" placeholder="Usuario" class="form-control form-control-lg"
+          autocomplete="username" />
         <div *ngIf="loginForm.get('username')?.invalid && loginForm.get('username')?.touched"
           class="text-warning small mt-1">
           Usuario es requerido
@@ -17,16 +17,15 @@
       </div>
 
       <div class="mb-4">
-        <input type="password" formControlName="password" placeholder="Contraseña"
-          class="form-control form-control-lg" autocomplete="current-password" />
+        <input type="password" formControlName="password" placeholder="Contraseña" class="form-control form-control-lg"
+          autocomplete="current-password" />
         <div *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
           class="text-warning small mt-1">
           Contraseña es requerida
         </div>
       </div>
 
-      <button type="submit" class="btn btn-dark w-100 btn-lg fw-semibold"
-        [disabled]="loginForm.invalid || loading">
+      <button type="submit" class="btn btn-dark w-100 btn-lg fw-semibold" [disabled]="loginForm.invalid || loading">
         <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
         {{ loading ? 'Ingresando...' : 'Ingresar' }}
       </button>

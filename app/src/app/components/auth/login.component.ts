@@ -7,7 +7,7 @@ import { CommonModule, isPlatformBrowser } from '@angular/common';
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [ReactiveFormsModule, CommonModule], 
+  imports: [ReactiveFormsModule, CommonModule],
   templateUrl: './login.component.html',
 })
 export class LoginComponent {
@@ -37,12 +37,12 @@ export class LoginComponent {
 
     this.authService.login(username, password).subscribe({
       next: () => {
-        
+
         this.loading = false;
         if (isPlatformBrowser(this.platformId)) {
           this.router.navigate(['/dashboard']);
-        }else{
-          
+        } else {
+
           this.router.navigate(['/dashboard']);
         }
       },

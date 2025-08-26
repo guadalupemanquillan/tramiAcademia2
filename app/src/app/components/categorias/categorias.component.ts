@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
 import { CategoriaService } from '../../core/services/categoria.service';
 import { Categoria, CategoriaPaginatedResponse } from '../../core/models/categoria.model';
+import { EmpresaService } from '../../core/services/empresa.service';
+import { Empresa } from '../../core/models/empresa.model';
 import { AlertService } from '../../core/services/alert.service';
 
 @Component({
@@ -18,13 +20,15 @@ export class CategoriasComponent {
   categoriasPage = 1;
   categoriasLimit = 10;
 
-  nuevaCategoria: Partial<Categoria> = { nombre: '', categoriaPadre: null, jerarquia: 0 };
+  nuevaCategoria: Partial<Categoria> = { nombre: '', categoriaPadre: null, jerarquia: 0, empresaId: null };
   categoriaEditar: Partial<Categoria> | null = null;
   todasCategorias: Categoria[] = [];
+  empresas: Empresa[] = [];
 
-  constructor(private categoriaService: CategoriaService, private alert: AlertService) {
+  constructor(private categoriaService: CategoriaService, private alert: AlertService, private empresaService: EmpresaService) {
     this.cargarCategorias();
     this.cargarTodasCategorias();
+    this.cargarEmpresas();
   }
 
   // --- Helpers usados por Dashboard ---
@@ -61,6 +65,13 @@ export class CategoriasComponent {
       });
   }
 
+  cargarEmpresas(): void {
+    this.empresaService.getAll().subscribe({
+      next: (emps) => { this.empresas = emps || []; },
+      error: () => { this.empresas = []; }
+    });
+  }
+
   cambiarPaginaCategorias(page: number): void {
     if (page < 1 || page > this.categoriasResp.totalPages) return;
     this.categoriasPage = page;
@@ -73,12 +84,13 @@ export class CategoriasComponent {
     const payload: Partial<Categoria> = {
       nombre: this.nuevaCategoria.nombre!,
       categoriaPadre: this.nuevaCategoria.categoriaPadre ?? null,
-      jerarquia: this.nuevaCategoria.jerarquia ?? 0
+      jerarquia: this.nuevaCategoria.jerarquia ?? 0,
+      empresaId: this.nuevaCategoria.empresaId ?? null
     };
 
     this.categoriaService.create(payload).subscribe({
       next: () => {
-        this.nuevaCategoria = { nombre: '', categoriaPadre: null, jerarquia: 0 };
+        this.nuevaCategoria = { nombre: '', categoriaPadre: null, jerarquia: 0, empresaId: null };
         (document.getElementById('crearCategoriaCerrarBtn') as HTMLButtonElement)?.click();
         this.cargarCategorias();
         this.cargarTodasCategorias();
@@ -95,6 +107,12 @@ export class CategoriasComponent {
     if (!id) return '-';
     const found = this.todasCategorias.find(c => c._id === id);
     return found?.nombre || '-';
+  }
+
+  empresaNombrePorId(id?: string | null): string {
+    if (!id) return 'Sin empresa';
+    const found = this.empresas.find(e => e._id === id);
+    return found?.nombre || 'Sin empresa';
   }
 
   abrirEditarCategoria(cat: Categoria): void {

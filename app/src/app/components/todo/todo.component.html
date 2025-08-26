@@ -17,54 +17,60 @@
       <label class="form-label mb-0" for="categoriaSelect">Filtrar tareas por categoría</label>
     </div>
 
-      <ng-container *ngIf="authService.role === 'editor'">
-        <ul class="list-group">
-          <li *ngFor="let t of todosFiltrados; trackBy: trackTodo" class="list-group-item">
-          <div class="d-flex justify-content-between align-items-center mb-2">
-            <div>
-              <strong>{{ t.titulo }}</strong>
-              <span class="badge bg-light text-dark border ms-2">{{ obtenerNombreCategoria(t.categoriaId) }}</span>
+    <ng-container *ngIf="authService.role === 'editor'; else userCards">
+      <div class="row g-3">
+        <div *ngFor="let t of todosActivos; trackBy: trackTodo" class="col-12 col-md-6 col-xl-4">
+          <div class="card h-100 shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <div>
+                <strong>{{ t.titulo }}</strong>
+                <span class="badge bg-light text-dark border ms-2">{{ obtenerNombreCategoria(t.categoriaId) }}</span>
+                <span class="badge ms-2" [class.bg-success]="t.activo" [class.bg-secondary]="!t.activo">{{ t.activo ? 'Activo' : 'Inactivo' }}</span>
+              </div>
+              <div>
+                <button class="btn btn-link text-dark p-0 me-2" (click)="abrirEditar(t)" data-bs-toggle="modal"
+                  data-bs-target="#modalEditarTodo" title="Editar">
+                  <i class="bi bi-pencil-fill"></i>
+                </button>
+                <button class="btn btn-link text-dark p-0" (click)="confirmarEliminar(t)" title="Eliminar">
+                  <i class="bi bi-trash3-fill"></i>
+                </button>
+              </div>
             </div>
-            <div *ngIf="authService.role === 'editor'">
-              <button class="btn btn-link text-dark p-0 me-2" (click)="abrirEditar(t)" data-bs-toggle="modal" data-bs-target="#modalEditarTodo" title="Editar">
-                <i class="bi bi-pencil-fill"></i>
-              </button>
-              <button class="btn btn-link text-dark p-0" (click)="confirmarEliminar(t)" title="Eliminar">
-                <i class="bi bi-trash3-fill"></i>
-              </button>
+            <div class="card-body">
+              <ul class="list-unstyled mb-0">
+                <li *ngFor="let tb of (t.tareasBase || [])" class="mb-1">
+                  <span [class.text-decoration-line-through]="tb.completada">• {{ tb.nombreTarea }}</span>
+                </li>
+              </ul>
             </div>
           </div>
-
-          <ul class="list-group list-group-flush">
-            <li *ngFor="let tb of (t.tareasBase || [])" class="list-group-item px-0 py-1">
-              <span [class.text-decoration-line-through]="tb.completada">• {{ tb.nombreTarea }}</span>
-            </li>
-          </ul>
-          </li>
-        </ul>
-      </ng-container>
-    </div>
-    <div class="d-flex align-items-center justify-content-between mb-2 px-2">
-      <h6 class="mb-0">Checklist de usuario (videos, artículos y tareas)</h6>
-    </div>
-    <div *ngIf="loadingChecklist" class="text-muted small">Cargando...</div>
-    <div *ngIf="!loadingChecklist && checklistFiltrada.length === 0" class="text-muted small">No hay elementos en tu checklist.</div>
-    <ul class="list-group list-group-flush mt-2" *ngIf="!loadingChecklist && checklistFiltrada.length > 0">
-      <li *ngFor="let item of checklistFiltrada" class="list-group-item border-0 d-flex align-items-center px-2 py-2">
-        <div class="form-check form-switch me-3">
-          <input class="form-check-input" type="checkbox" [checked]="item.completed" (change)="onChecklistToggle(item, $event)" title="Marcar como completado">
         </div>
-        <span class="badge me-2" [ngClass]="{
-          'bg-success': item.type === 'video',
-          'bg-primary': item.type === 'articulo',
-          'bg-secondary': item.type === 'custom',
-          'bg-info': item.type === 'test'
-        }">{{ item.type }}</span>
-        <span [class.text-decoration-line-through]="item.completed">{{ item.title }}</span>
-        <button class="btn btn-sm btn-outline-primary ms-auto" (click)="goToChecklistItem(item)">Ir</button>
-      </li>
-    </ul>
+      </div>
+    </ng-container>
+    <ng-template #userCards>
+      <div class="row g-3">
+        <div *ngFor="let t of todosActivos; trackBy: trackTodo" class="col-12 col-md-6 col-xl-4">
+          <div class="card h-100 shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <div>
+                <strong>{{ t.titulo }}</strong>
+                <span class="badge bg-light text-dark border ms-2">{{ obtenerNombreCategoria(t.categoriaId) }}</span>
+              </div>
+            </div>
+            <div class="card-body">
+              <ul class="list-unstyled mb-0">
+                <li *ngFor="let tb of (t.tareasBase || [])" class="mb-1">
+                  • {{ tb.nombreTarea }}
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ng-template>
   </div>
+</div>
 
 <!-- Modal Crear Todo -->
 <div class="modal fade" id="modalCrearTodo" tabindex="-1" aria-hidden="true" *ngIf="authService.role === 'editor'">
@@ -78,6 +84,10 @@
         <div class="mb-3">
           <label class="form-label">Título</label>
           <input class="form-control" [(ngModel)]="nuevoTodo.titulo">
+        </div>
+        <div class="form-check form-switch mb-3">
+          <input class="form-check-input" type="checkbox" id="todoActivoNuevo" [(ngModel)]="nuevoTodo.activo" name="todoActivoNuevo">
+          <label class="form-check-label" for="todoActivoNuevo">Activo</label>
         </div>
         <div class="mb-3">
           <label class="form-label">Categoría</label>
@@ -122,6 +132,30 @@
         <div class="mb-3">
           <label class="form-label">Título</label>
           <input class="form-control" [(ngModel)]="t.titulo">
+        </div>
+        <div class="form-check form-switch mb-3">
+          <input class="form-check-input" type="checkbox" id="todoActivoEdit" [(ngModel)]="t.activo" name="todoActivoEdit">
+          <label class="form-check-label" for="todoActivoEdit">Activo</label>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Categoría</label>
+          <select class="form-select" [(ngModel)]="t.categoriaId">
+            <option [ngValue]="null">Sin categoría</option>
+            <option *ngFor="let c of categorias" [ngValue]="c._id">{{ c.nombre }}</option>
+          </select>
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Tareas del Todo</label>
+          <div class="input-group mb-2">
+            <input class="form-control" #tnameEdit placeholder="Nombre de tarea (video/test/otro)">
+            <button type="button" class="btn btn-outline-primary" (click)="addTareaBaseEdit(tnameEdit)">Agregar</button>
+          </div>
+          <ul class="list-group">
+            <li *ngFor="let tb of (t.tareasBase || []); let i=index" class="list-group-item d-flex justify-content-between">
+              <input class="form-control me-2" [(ngModel)]="tb.nombreTarea">
+              <button type="button" class="btn btn-sm btn-outline-danger" (click)="removeTareaBaseEdit(i)">Quitar</button>
+            </li>
+          </ul>
         </div>
       </div>
       <div class="modal-footer">

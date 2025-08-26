@@ -12,8 +12,6 @@ import { CategoriaService } from '../../core/services/categoria.service';
 import { Categoria } from '../../core/models/categoria.model';
 import { TestService } from '../../core/services/test.service';
 import { TestItem } from '../../core/models/test.model';
-import { TodoService } from '../../core/services/todo.service';
-import { TodoItem } from '../../core/models/todo.model';
 import { VideoService } from '../../core/services/video.service';
 import { VideoItem } from '../../core/models/video.model';
 import { LogrosService } from '../../core/services/logros.service';
@@ -37,15 +35,12 @@ export class DashboardComponent implements OnInit {
   empresas$: Observable<Empresa[]> = of([]);
   categorias$: Observable<Categoria[]> = of([]);
   tests$: Observable<TestItem[]> = of([]);
-  todos$: Observable<TodoItem[]> = of([]);
   videos$: Observable<VideoItem[]> = of([]);
   logros$: Observable<Logros[]> = of([]);
   users$: Observable<User[]> = of([]);
   currentUser$: Observable<User | null> = of(null);
   isEditorFlag = false;
   tareasCompletadasPct$: Observable<number> = of(0);
-  contenidoPendiente$: Observable<number> = of(0);
-  contenidoPendientePct$: Observable<number> = of(0);
 
   tiles: Tile[] = [];
   // referencias a helpers de hijos
@@ -61,7 +56,6 @@ export class DashboardComponent implements OnInit {
     private empresaService: EmpresaService,
     private categoriaService: CategoriaService,
     private testService: TestService,
-    private todoService: TodoService,
     private videoService: VideoService,
     private logrosService: LogrosService,
     private userService: UserService
@@ -74,11 +68,12 @@ export class DashboardComponent implements OnInit {
       this.router.navigate(['/login']);
       return;
     }
-   const currentUrl = this.router.url.replace(/\/$/, '');
+    const currentUrl = this.router.url.replace(/\/$/, '');
     if (currentUrl === '/dashboard') {
       const role = this.authService.role;
       const target = role === 'editor' ? '/dashboard/admin' : '/dashboard/usuario';
       this.router.navigate([target]);
+      return;
     }
     const userId = this.authService.id;
     const isEditor = this.authService.role === 'editor';
@@ -92,7 +87,6 @@ export class DashboardComponent implements OnInit {
         catchError(() => of([] as Categoria[]))
       );
       this.tests$ = this.testService.getAll().pipe(catchError(() => of([] as TestItem[])));
-      this.todos$ = this.todoService.getAll().pipe(catchError(() => of([] as TodoItem[])));
       this.videos$ = this.videoService.getAll().pipe(catchError(() => of([] as VideoItem[])));
       this.logros$ = this.logrosService.getAll().pipe(catchError(() => of([] as Logros[])));
       this.users$ = this.userService.getAll().pipe(catchError(() => of([] as User[])));
@@ -106,8 +100,9 @@ export class DashboardComponent implements OnInit {
       ];
     } else {
       // Usuario: logros y todo
-      this.todos$ = this.todoService.getAll().pipe(catchError(() => of([] as TodoItem[])));
       this.logros$ = this.logrosService.getAll().pipe(catchError(() => of([] as Logros[])));
+      // Cargar tests para KPIs del perfil
+      this.tests$ = this.testService.getAll().pipe(catchError(() => of([] as TestItem[])));
       if (userId) {
         this.currentUser$ = this.userService.getOne(userId).pipe(catchError(() => of(null)));
       }
@@ -120,21 +115,6 @@ export class DashboardComponent implements OnInit {
           if (!total) return 0;
           const completed = all.filter((i: any) => done.has(String(i?.code || ''))).length;
           return (completed / total) * 100;
-        })
-      );
-      const videos$ = this.videoService.getAll().pipe(catchError(() => of([])));
-      const articulos$ = of([] as any[]); // Implementar servicio si se desea contar artículos
-      this.contenidoPendiente$ = combineLatest([videos$, articulos$, completasUsuario$]).pipe(
-        map(([videos, arts, done]) => {
-          const all = [...(videos || []).map((v: any) => `video:${v?._id || ''}`), ...(arts || []).map((a: any) => `articulo:${a?._id || ''}`)];
-          return all.filter(code => !done.has(String(code))).length;
-        })
-      );
-      this.contenidoPendientePct$ = combineLatest([videos$, articulos$, this.contenidoPendiente$]).pipe(
-        map(([videos, arts, pend]) => {
-          const total = (Array.isArray(videos) ? videos.length : 0) + (Array.isArray(arts) ? arts.length : 0);
-          if (!total) return 0;
-          return ((pend as number) / total) * 100;
         })
       );
       // En vista de usuario no mostramos tiles adicionales

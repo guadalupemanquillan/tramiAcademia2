@@ -1,7 +1,8 @@
 <div class="card shadow-sm mx-4">
   <div class="card-header bg-primary-subtle text-primary-emphasis d-flex justify-content-between align-items-center">
     <h5 class="mb-0">Logros</h5>
-    <button *ngIf="authService.role === 'editor'" class="btn btn-brand" data-bs-toggle="modal" data-bs-target="#modalCrearLogro">Crear nuevo logro</button>
+    <button *ngIf="authService.role === 'editor'" class="btn btn-brand" data-bs-toggle="modal"
+      data-bs-target="#modalCrearLogro">Crear nuevo logro</button>
   </div>
   <div class="card-body">
 
@@ -21,8 +22,10 @@
               <img *ngIf="lg.iconoUrl" [src]="lg.iconoUrl" alt="icono" style="height:24px">
             </td>
             <td class="text-end" *ngIf="authService.role === 'editor'">
-              <button class="btn btn-link text-dark p-0 me-2" data-bs-toggle="modal" data-bs-target="#modalEditarLogro" (click)="abrirEditarLogro(lg)" title="Editar"><i class="bi bi-pencil-fill"></i></button>
-              <button class="btn btn-link text-dark p-0" (click)="confirmarEliminarLogro(lg)" title="Eliminar"><i class="bi bi-trash3-fill"></i></button>
+              <button class="btn btn-link text-dark p-0 me-2" data-bs-toggle="modal" data-bs-target="#modalEditarLogro"
+                (click)="abrirEditarLogro(lg)" title="Editar"><i class="bi bi-pencil-fill"></i></button>
+              <button class="btn btn-link text-dark p-0" (click)="confirmarEliminarLogro(lg)" title="Eliminar"><i
+                  class="bi bi-trash3-fill"></i></button>
             </td>
           </tr>
         </tbody>
@@ -41,7 +44,8 @@
       <div class="modal-body">
         <div class="mb-3">
           <label class="form-label" for="usuarioSelect">Usuario</label>
-          <select id="usuarioSelect" class="form-select" [(ngModel)]="userSeleccionadoId" aria-label="Seleccionar usuario para el logro">
+          <select id="usuarioSelect" class="form-select" [(ngModel)]="userSeleccionadoId"
+            aria-label="Seleccionar usuario para el logro">
             <option [ngValue]="null">Seleccione un usuario</option>
             <option *ngFor="let u of users" [ngValue]="u._id">{{ u.nombreCompleto || u.nombre }}</option>
           </select>

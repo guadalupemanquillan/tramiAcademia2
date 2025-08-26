@@ -8,7 +8,8 @@ exports.createNewUserController = async (req, res) => {
     res.status(201).json(newUser);
   } catch (error) {
     console.error(error);
-    res.status(500).json({
+    const status = error.statusCode || 500;
+    res.status(status).json({
       message: "Error al crear el usuario",
       error: error.message,
     });
