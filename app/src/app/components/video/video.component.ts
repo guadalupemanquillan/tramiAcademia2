@@ -6,6 +6,8 @@ import { VideoService } from '../../core/services/video.service';
 import { VideoItem } from '../../core/models/video.model';
 import { AlertService } from '../../core/services/alert.service';
 import { AuthService } from '../../core/services/auth.service';
+import { Categoria } from '../../core/models/categoria.model';
+import { CategoriaService } from '../../core/services/categoria.service';
 
 @Component({
   selector: 'app-video',
@@ -18,11 +20,14 @@ export class VideoComponent implements OnInit {
   nuevoVideo: Partial<VideoItem> = { urlYouTube: '', titulo: '', categoriaId: null };
   videoEditar: Partial<VideoItem> | null = null;
   loading = true;
+  categorias: Categoria[] = [];
+  categoriaSeleccionada: string | null = null;
 
-  constructor(private videoService: VideoService, private cdr: ChangeDetectorRef, private alert: AlertService, public authService: AuthService) {}
+  constructor(private videoService: VideoService, private cdr: ChangeDetectorRef, private alert: AlertService, public authService: AuthService, private categoriaService: CategoriaService) {}
 
   ngOnInit(): void {
     this.cargarVideos();
+    this.cargarCategorias();
   }
 
   cargarVideos(): void {
@@ -33,8 +38,18 @@ export class VideoComponent implements OnInit {
     });
   }
 
+  private cargarCategorias(): void {
+    this.categoriaService.getAll(1, 100, '').subscribe({
+      next: resp => { this.categorias = resp.items || []; this.cdr.detectChanges(); },
+      error: () => { this.categorias = []; }
+    });
+  }
+
   crearVideo(): void {
-    if (!this.nuevoVideo.titulo || !this.nuevoVideo.urlYouTube) return;
+    if (!this.nuevoVideo.titulo || !this.nuevoVideo.urlYouTube || !this.nuevoVideo.categoriaId) {
+      this.alert.warning('Completa título, URL y categoría.');
+      return;
+    }
     this.videoService.create(this.nuevoVideo).subscribe({
       next: () => { this.nuevoVideo = { urlYouTube: '', titulo: '', categoriaId: null }; this.cargarVideos(); this.alert.success('Video creado.'); },
       error: () => this.alert.error('No se pudo crear el video.')
@@ -71,6 +86,14 @@ export class VideoComponent implements OnInit {
     if (!categoriaId) return videos;
     return videos.filter(v => String((v as any)?.categoriaId || '') === String(categoriaId));
   }
+
+  get videosFiltrados(): VideoItem[] {
+    if (!this.categoriaSeleccionada) return this.videos;
+    return this.videos.filter(v => String((v as any)?.categoriaId || '') === String(this.categoriaSeleccionada));
+  }
+
+  trackVideo(index: number, v: VideoItem): string | number { return v?._id || index; }
+  trackCategoria(index: number, c: Categoria): string | number { return c?._id || index; }
 }
 
 

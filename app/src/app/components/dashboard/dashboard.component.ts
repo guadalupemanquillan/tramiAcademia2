@@ -4,7 +4,7 @@ import { Router, RouterModule } from '@angular/router';
 import { isPlatformBrowser } from '@angular/common';
 import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
+import { Observable, combineLatest, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { EmpresaService } from '../../core/services/empresa.service';
 import { Empresa } from '../../core/models/empresa.model';
@@ -43,6 +43,9 @@ export class DashboardComponent implements OnInit {
   users$: Observable<User[]> = of([]);
   currentUser$: Observable<User | null> = of(null);
   isEditorFlag = false;
+  tareasCompletadasPct$: Observable<number> = of(0);
+  contenidoPendiente$: Observable<number> = of(0);
+  contenidoPendientePct$: Observable<number> = of(0);
 
   tiles: Tile[] = [];
   // referencias a helpers de hijos
@@ -77,39 +80,66 @@ export class DashboardComponent implements OnInit {
       const target = role === 'editor' ? '/dashboard/admin' : '/dashboard/usuario';
       this.router.navigate([target]);
     }
-    this.empresas$ = this.empresaService.getAll().pipe(catchError(() => of([] as Empresa[])));
-    this.categorias$ = this.categoriaService.getAll(1, 50, '').pipe(
-      map(r => r.items || []),
-      catchError(() => of([] as Categoria[]))
-    );
-    const allTests$ = this.testService.getAll().pipe(catchError(() => of([] as TestItem[])));
-    const allTodos$ = this.todoService.getAll().pipe(catchError(() => of([] as TodoItem[])));
-    const allVideos$ = this.videoService.getAll().pipe(catchError(() => of([] as VideoItem[])));
-    const allLogros$ = this.logrosService.getAll().pipe(catchError(() => of([] as Logros[])));
-    const allUsers$ = this.userService.getAll().pipe(catchError(() => of([] as User[])));
-
     const userId = this.authService.id;
     const isEditor = this.authService.role === 'editor';
     this.isEditorFlag = isEditor;
 
-    this.tests$ = allTests$;
-    this.todos$ = allTodos$;
-    this.videos$ = allVideos$;
-    this.logros$ = allLogros$;
-    this.users$ = allUsers$;
-    if (!isEditor && userId) {
-      this.currentUser$ = this.userService.getOne(userId).pipe(catchError(() => of(null)));
+    if (isEditor) {
+      // Admin: mantiene vista completa
+      this.empresas$ = this.empresaService.getAll().pipe(catchError(() => of([] as Empresa[])));
+      this.categorias$ = this.categoriaService.getAll(1, 50, '').pipe(
+        map(r => r.items || []),
+        catchError(() => of([] as Categoria[]))
+      );
+      this.tests$ = this.testService.getAll().pipe(catchError(() => of([] as TestItem[])));
+      this.todos$ = this.todoService.getAll().pipe(catchError(() => of([] as TodoItem[])));
+      this.videos$ = this.videoService.getAll().pipe(catchError(() => of([] as VideoItem[])));
+      this.logros$ = this.logrosService.getAll().pipe(catchError(() => of([] as Logros[])));
+      this.users$ = this.userService.getAll().pipe(catchError(() => of([] as User[])));
+
+      this.tiles = [
+        { title: 'Tests', obs: this.tests$, link: '/admin/tests', color: 'success', valueProp: 'preguntas.length' },
+        { title: 'Video', obs: this.videos$, link: '/admin/video', color: 'dark', valueProp: 'titulo' },
+        { title: 'Empresas', obs: this.empresas$, link: '/admin/empresa', color: 'primary', valueProp: 'nombre' },
+        { title: 'Categorías', obs: this.categorias$, link: '/admin/categoria', color: 'info', valueProp: 'nombre' },
+        { title: 'Logros', obs: this.logros$, link: '/admin/logro', color: 'success', valueProp: 'nombre' }
+      ];
+    } else {
+      // Usuario: logros y todo
+      this.todos$ = this.todoService.getAll().pipe(catchError(() => of([] as TodoItem[])));
+      this.logros$ = this.logrosService.getAll().pipe(catchError(() => of([] as Logros[])));
+      if (userId) {
+        this.currentUser$ = this.userService.getOne(userId).pipe(catchError(() => of(null)));
+      }
+      // KPIs por usuario: tareas y contenido pendiente
+      const tareasUsuario$ = this.userService.getChecklist(userId || null).pipe(catchError(() => of([] as any[])));
+      const completasUsuario$ = this.userService.getCompletedCodes(userId || null).pipe(catchError(() => of(new Set<string>())));
+      this.tareasCompletadasPct$ = combineLatest([tareasUsuario$, completasUsuario$]).pipe(
+        map(([all, done]) => {
+          const total = Array.isArray(all) ? all.length : 0;
+          if (!total) return 0;
+          const completed = all.filter((i: any) => done.has(String(i?.code || ''))).length;
+          return (completed / total) * 100;
+        })
+      );
+      const videos$ = this.videoService.getAll().pipe(catchError(() => of([])));
+      const articulos$ = of([] as any[]); // Implementar servicio si se desea contar artículos
+      this.contenidoPendiente$ = combineLatest([videos$, articulos$, completasUsuario$]).pipe(
+        map(([videos, arts, done]) => {
+          const all = [...(videos || []).map((v: any) => `video:${v?._id || ''}`), ...(arts || []).map((a: any) => `articulo:${a?._id || ''}`)];
+          return all.filter(code => !done.has(String(code))).length;
+        })
+      );
+      this.contenidoPendientePct$ = combineLatest([videos$, articulos$, this.contenidoPendiente$]).pipe(
+        map(([videos, arts, pend]) => {
+          const total = (Array.isArray(videos) ? videos.length : 0) + (Array.isArray(arts) ? arts.length : 0);
+          if (!total) return 0;
+          return ((pend as number) / total) * 100;
+        })
+      );
+      // En vista de usuario no mostramos tiles adicionales
+      this.tiles = [];
     }
-    // Definir tiles y filtrar nulls
-    this.tiles = [
-      !isEditor ? { title: 'Usuario', obs: this.currentUser$.pipe(map(u => u ? [u] : []), catchError(() => of([] as any[]))), link: null, color: 'secondary', valueProp: 'nombre' } : null,
-      { title: 'Tests', obs: this.tests$, link: isEditor ? '/admin/tests' : '/usuario/test', color: 'success', valueProp: 'preguntas.length' },
-      { title: 'Video', obs: this.videos$, link: isEditor ? '/admin/video' : '/usuario/video', color: 'dark', valueProp: 'titulo' },
-      isEditor ? { title: 'Empresas', obs: this.empresas$, link: '/admin/empresa', color: 'primary', valueProp: 'nombre' } : null,
-      isEditor ? { title: 'Categorías', obs: this.categorias$, link: '/admin/categoria', color: 'info', valueProp: 'nombre' } : null,
-      { title: 'Logros', obs: this.logros$, link: isEditor ? '/admin/logro' : '/usuario/logro', color: 'success', valueProp: 'nombre' },
-      isEditor ? null : { title: 'Todo', obs: this.todos$, link: '/usuario/todo', color: 'secondary', valueProp: 'titulo' }
-    ].filter(t => t !== null) as Tile[];
   }
   logout(): void {
     this.authService.logout();

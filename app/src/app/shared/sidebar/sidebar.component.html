@@ -2,10 +2,12 @@
   <!-- Menú -->
   <nav class="nav nav-pills flex-column mb-3">
     <a *ngFor="let item of filteredMenu"
-       class="nav-link d-flex align-items-center text-dark"
+       class="nav-link d-flex align-items-center"
        [routerLink]="item.route"
        routerLinkActive="active"
-       [routerLinkActiveOptions]="{ exact: true }">
+       #rla="routerLinkActive"
+       [routerLinkActiveOptions]="{ exact: true }"
+       [ngClass]="{ 'text-dark': !rla.isActive, 'text-white': rla.isActive }">
       <i class="bi me-2" [ngClass]="item.icon"></i>
       <span>{{ item.label }}</span>
     </a>

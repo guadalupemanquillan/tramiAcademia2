@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { TodoItem } from '../models/todo.model';
 
 @Injectable({ providedIn: 'root' })
@@ -10,7 +11,14 @@ export class TodoService {
   constructor(private http: HttpClient) {}
 
   getAll(): Observable<TodoItem[]> {
-    return this.http.get<TodoItem[]>(`${this.apiUrl}/`);
+    return this.http.get<TodoItem[]>(`${this.apiUrl}/`).pipe(
+      map((items: any[]) =>
+        (items || []).map((t: any) => ({
+          ...t,
+          categoriaId: (t?.categoriaId && typeof t.categoriaId === 'object') ? (t.categoriaId?._id ?? null) : (t?.categoriaId ?? null),
+        }))
+      )
+    );
   }
 
   getOne(id: string): Observable<TodoItem> {

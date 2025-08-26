@@ -1,10 +1,9 @@
 <div class="card shadow-sm mx-4">
+  <div class="card-header bg-primary-subtle text-primary-emphasis d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">Categorías</h5>
+    <button class="btn btn-brand" data-bs-toggle="modal" data-bs-target="#modalCrearCategoria">Crear nueva categoría</button>
+  </div>
   <div class="card-body">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <h5 class="card-title mb-0">Categorías</h5>
-      <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCrearCategoria">Nueva
-        Categoría</button>
-    </div>
     <div class="row g-2 mb-3">
       <div class="col-8">
         <input type="text" class="form-control" placeholder="Buscar por nombre" [(ngModel)]="categoriasNombreFiltro">
@@ -23,13 +22,17 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let c of categoriasResp.items">
+          <tr *ngFor="let c of categoriasResp.items; trackBy: trackCategoria">
             <td>{{ c.nombre }}</td>
             <td>{{ categoriaNombrePorId(c.categoriaPadre) }}</td>
             <td class="text-end">
-              <button class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal"
-                data-bs-target="#modalEditarCategoria" (click)="abrirEditarCategoria(c)">Editar</button>
-              <button class="btn btn-sm btn-outline-danger" (click)="confirmarEliminarCategoria(c)">Eliminar</button>
+              <button class="btn btn-link text-dark p-0 me-2" data-bs-toggle="modal"
+                data-bs-target="#modalEditarCategoria" (click)="abrirEditarCategoria(c)" title="Editar">
+                <i class="bi bi-pencil-fill"></i>
+              </button>
+              <button class="btn btn-link text-dark p-0" (click)="confirmarEliminarCategoria(c)" title="Eliminar">
+                <i class="bi bi-trash3-fill"></i>
+              </button>
             </td>
           </tr>
         </tbody>

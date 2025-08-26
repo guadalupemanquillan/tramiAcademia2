@@ -66,6 +66,12 @@ export const routes: Routes = [
     ]
   },
   {
+    path: 'users',
+    canActivate: [AuthGuard, RoleGuard],
+    data: { roles: ['editor'] },
+    loadComponent: () => import('./components/user/user.component').then(m => m.UserComponent)
+  },
+  {
     path: 'usuario',
     canActivate: [AuthGuard, RoleGuard],
     data: { roles: ['usuario', 'editor'] },

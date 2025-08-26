@@ -13,7 +13,7 @@
               </div>
             </div>
             <div class="ms-auto">
-              <button class="btn btn-brand" data-bs-toggle="modal" data-bs-target="#modalEmpresa" (click)="abrirCrear()">Nueva Empresa</button>
+              <button class="btn btn-brand" data-bs-toggle="modal" data-bs-target="#modalEmpresa" (click)="abrirCrear()">Crear nueva empresa</button>
             </div>
           </div>
           <div class="col-12 col-lg-5">
@@ -52,7 +52,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let e of empresasFiltradas" class="cursor-pointer">
+              <tr *ngFor="let e of empresasFiltradas; trackBy: trackEmpresa" class="cursor-pointer">
                 <td class="w-25 align-middle"><div class="text-truncate">{{ e.nombre }}</div></td>
                 <td class="w-25">
                   <div class="ratio ratio-slim bg-light rounded d-flex align-items-center justify-content-center">

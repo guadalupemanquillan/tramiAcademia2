@@ -6,6 +6,8 @@ import { LogrosService } from '../../core/services/logros.service';
 import { Logros } from '../../core/models/logros.model';
 import { AuthService } from '../../core/services/auth.service';
 import { AlertService } from '../../core/services/alert.service';
+import { User } from '../../core/models/user.model';
+import { UserService } from '../../core/services/user.service';
 
 @Component({
   selector: 'app-logros',
@@ -18,16 +20,23 @@ export class LogrosComponent implements OnInit {
   nuevoLogro: Logros = { nombre: '', iconoUrl: '' } as Logros;
   logroEditar: Partial<Logros> | null = null;
   loading: boolean = true;
+  users: User[] = [];
+  userSeleccionadoId: string | null = null;
 
   constructor(
     private logrosService: LogrosService,
     public authService: AuthService,
     private cdr: ChangeDetectorRef,
-    private alert: AlertService
+    private alert: AlertService,
+    private userService: UserService
   ) { }
 
   ngOnInit(): void {
     this.cargarLogros();
+    // Solo el editor necesita el listado de usuarios para asignar logros
+    if (this.authService.role === 'editor') {
+      this.cargarUsuarios();
+    }
   }
 
   // --- Helpers usados por Dashboard ---
@@ -76,19 +85,40 @@ export class LogrosComponent implements OnInit {
 
   cargarLogros(): void {
     this.loading = true;
-    this.logrosService.getAll().subscribe((logros: Logros[]) => {
-      this.logros = logros;
-      this.loading = false;
-      this.cdr.detectChanges();
+    const role = this.authService.role;
+    if (role === 'usuario' && this.authService.id) {
+      this.logrosService.getAll().subscribe((logros: Logros[]) => {
+        const uid = String(this.authService.id);
+        this.logros = (logros || []).filter(l => String((l as any)?.usuarioId || '') === uid || (Array.isArray((this as any)?.authService?.logros) && (this as any).authService.logros.includes(String((l as any)?._id || ''))));
+        this.loading = false;
+        this.cdr.detectChanges();
+      });
+    } else {
+      this.logrosService.getAll().subscribe((logros: Logros[]) => {
+        this.logros = logros;
+        this.loading = false;
+        this.cdr.detectChanges();
+      });
+    }
+  }
+
+  private cargarUsuarios(): void {
+    this.userService.getAll().subscribe({
+      next: (users) => { this.users = users || []; this.cdr.detectChanges(); },
+      error: () => { this.users = []; }
     });
   }
 
   crearLogro(): void {
-    const userId = this.authService.id;
-    if (!userId || !this.nuevoLogro.nombre || !this.nuevoLogro.iconoUrl) return;
+    const userId = this.userSeleccionadoId || this.authService.id;
+    if (!userId || !this.nuevoLogro.nombre || !this.nuevoLogro.iconoUrl) {
+      this.alert.warning('Selecciona un usuario, nombre e icono.');
+      return;
+    }
     this.logrosService.create({ userId, nombre: this.nuevoLogro.nombre, iconoUrl: this.nuevoLogro.iconoUrl }).subscribe({
       next: () => {
         this.nuevoLogro = { nombre: '', iconoUrl: '' } as Logros;
+        this.userSeleccionadoId = null;
         (document.getElementById('crearLogroCerrarBtn') as HTMLButtonElement)?.click();
         this.cargarLogros();
         this.alert.success('El logro se creó correctamente.');
@@ -134,4 +164,6 @@ export class LogrosComponent implements OnInit {
       });
     });
   }
+
+  trackLogro(index: number, l: Logros): string | number { return l?._id || index; }
 }

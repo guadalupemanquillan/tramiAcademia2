@@ -54,7 +54,7 @@ export class EmpresasComponent implements OnInit {
     return this.empresasFiltradas.slice(0, 8);
   }
   onBuscarInput(): void {
-    this.selectedEmpresaId = null; // si el usuario vuelve a escribir, se limpia la selección exacta
+    this.selectedEmpresaId = null; // reinicia
     this.mostrarSugerencias = !!this.empresasFiltro.trim();
     this.highlightedIndex = -1;
   }
@@ -142,6 +142,8 @@ export class EmpresasComponent implements OnInit {
       });
     });
   }
+
+  trackEmpresa(index: number, e: Empresa): string | number { return (e as any)?._id || index; }
   // Resúmenes para cabecera
   get totalEmpresas(): number {
     return this.empresas.length;

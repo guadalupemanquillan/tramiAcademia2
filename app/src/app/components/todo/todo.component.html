@@ -1,39 +1,77 @@
 <div class="card shadow-sm mx-4">
-  <div class="card-body">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <h5 class="card-title mb-0">Lista de tareas</h5>
-      <button *ngIf="authService.role === 'editor'" class="btn btn-primary" data-bs-toggle="modal"
-        data-bs-target="#modalCrearTodo">
-        Nuevo Todo
-      </button>
-    </div>
-
-    <div class="row g-3">
-      <!-- Checklist tiene tests, videos, y tareas base -->
-      <h6 class="mb-2">-</h6>
-      <div *ngIf="checklist.length === 0" class="text-muted small">Sin tareas en checklist.</div>
-      <ul class="list-group">
-        <li *ngFor="let c of checklist; trackBy: trackCode"
-          class="list-group-item d-flex justify-content-between align-items-center">
-          <div class="form-check">
-            <input class="form-check-input" type="checkbox" [checked]="c.completed" (change)="toggleChecklist(c)"
-              [id]="'chk-' + c.code">
-            <label class="form-check-label" [for]="'chk-' + c.code">
-              {{ c.title }} <span class="badge bg-secondary ms-2">{{ c.type }}</span>
-            </label>
-          </div>
-        </li>
-      </ul>
-
-    </div>
+  <div class="card-header bg-primary-subtle text-primary-emphasis d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">Tareas a realizar</h5>
+    <button *ngIf="authService.role === 'editor'" class="btn btn-brand" data-bs-toggle="modal"
+      data-bs-target="#modalCrearTodo">
+      Crear nuevo todo
+    </button>
   </div>
-</div>
-<!-- Crear Todo -->
+  <div class="card-body">
+
+    <div class="d-flex align-items-center flex-wrap gap-2 mb-3">
+      <select id="categoriaSelect" class="form-select form-select-lg w-auto me-2" [(ngModel)]="categoriaSeleccionada"
+        aria-label="Filtro de categoría">
+        <option [ngValue]="null">Todas</option>
+        <option *ngFor="let c of categorias" [ngValue]="c._id">{{ c.nombre }}</option>
+      </select>
+      <label class="form-label mb-0" for="categoriaSelect">Filtrar tareas por categoría</label>
+    </div>
+
+      <ng-container *ngIf="authService.role === 'editor'">
+        <ul class="list-group">
+          <li *ngFor="let t of todosFiltrados; trackBy: trackTodo" class="list-group-item">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <div>
+              <strong>{{ t.titulo }}</strong>
+              <span class="badge bg-light text-dark border ms-2">{{ obtenerNombreCategoria(t.categoriaId) }}</span>
+            </div>
+            <div *ngIf="authService.role === 'editor'">
+              <button class="btn btn-link text-dark p-0 me-2" (click)="abrirEditar(t)" data-bs-toggle="modal" data-bs-target="#modalEditarTodo" title="Editar">
+                <i class="bi bi-pencil-fill"></i>
+              </button>
+              <button class="btn btn-link text-dark p-0" (click)="confirmarEliminar(t)" title="Eliminar">
+                <i class="bi bi-trash3-fill"></i>
+              </button>
+            </div>
+          </div>
+
+          <ul class="list-group list-group-flush">
+            <li *ngFor="let tb of (t.tareasBase || [])" class="list-group-item px-0 py-1">
+              <span [class.text-decoration-line-through]="tb.completada">• {{ tb.nombreTarea }}</span>
+            </li>
+          </ul>
+          </li>
+        </ul>
+      </ng-container>
+    </div>
+    <div class="d-flex align-items-center justify-content-between mb-2 px-2">
+      <h6 class="mb-0">Checklist de usuario (videos, artículos y tareas)</h6>
+    </div>
+    <div *ngIf="loadingChecklist" class="text-muted small">Cargando...</div>
+    <div *ngIf="!loadingChecklist && checklistFiltrada.length === 0" class="text-muted small">No hay elementos en tu checklist.</div>
+    <ul class="list-group list-group-flush mt-2" *ngIf="!loadingChecklist && checklistFiltrada.length > 0">
+      <li *ngFor="let item of checklistFiltrada" class="list-group-item border-0 d-flex align-items-center px-2 py-2">
+        <div class="form-check form-switch me-3">
+          <input class="form-check-input" type="checkbox" [checked]="item.completed" (change)="onChecklistToggle(item, $event)" title="Marcar como completado">
+        </div>
+        <span class="badge me-2" [ngClass]="{
+          'bg-success': item.type === 'video',
+          'bg-primary': item.type === 'articulo',
+          'bg-secondary': item.type === 'custom',
+          'bg-info': item.type === 'test'
+        }">{{ item.type }}</span>
+        <span [class.text-decoration-line-through]="item.completed">{{ item.title }}</span>
+        <button class="btn btn-sm btn-outline-primary ms-auto" (click)="goToChecklistItem(item)">Ir</button>
+      </li>
+    </ul>
+  </div>
+
+<!-- Modal Crear Todo -->
 <div class="modal fade" id="modalCrearTodo" tabindex="-1" aria-hidden="true" *ngIf="authService.role === 'editor'">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Crear Todo</h5>
+        <h5 class="modal-title">Crear una tarea a relizar</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
@@ -52,10 +90,12 @@
           <label class="form-label">Tareas del Todo</label>
           <div class="input-group mb-2">
             <input class="form-control" #tname placeholder="Nombre de tarea (video/test/otro)">
-            <button type="button" class="btn btn-outline-primary" (click)="addTareaBaseFromInput(tname)">Agregar</button>
+            <button type="button" class="btn btn-outline-primary"
+              (click)="addTareaBaseFromInput(tname)">Agregar</button>
           </div>
           <ul class="list-group">
-            <li *ngFor="let tb of (nuevoTodo.tareasBase || []); let i=index" class="list-group-item d-flex justify-content-between">
+            <li *ngFor="let tb of (nuevoTodo.tareasBase || []); let i=index"
+              class="list-group-item d-flex justify-content-between">
               <span>{{ tb.nombreTarea }}</span>
               <button type="button" class="btn btn-sm btn-outline-danger" (click)="removeTareaBase(i)">Quitar</button>
             </li>
@@ -75,7 +115,7 @@
   <div class="modal-dialog">
     <div class="modal-content" *ngIf="todoEditar as t">
       <div class="modal-header">
-        <h5 class="modal-title">Editar Todo</h5>
+        <h5 class="modal-title">Editar tareas por hacer </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">

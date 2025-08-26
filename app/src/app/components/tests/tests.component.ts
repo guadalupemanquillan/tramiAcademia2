@@ -8,6 +8,9 @@ import { AlertService } from '../../core/services/alert.service';
 import { AuthService } from '../../core/services/auth.service';
 import { LogrosService } from '../../core/services/logros.service';
 import { Logros } from '../../core/models/logros.model';
+import { TodoService } from '../../core/services/todo.service';
+import { TareasService } from '../../core/services/tareas.service';
+import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-tests',
@@ -29,7 +32,7 @@ export class TestsComponent implements OnInit {
   selectedLogros: { nombre: string; iconoUrl: string; _id?: string }[] = [];
   numPreguntas: number = 1;
 
-  private completedKeyPrefix = 'completedTests_';
+  // Eliminado localStorage legacy: usamos TareasService
 
   // Para realizar test (rol usuario)
   testAResponder: TestItem | null = null;
@@ -40,7 +43,9 @@ export class TestsComponent implements OnInit {
     private cdr: ChangeDetectorRef,
     private alert: AlertService,
     private logrosService: LogrosService,
-    public authService: AuthService
+    public authService: AuthService,
+    private todoService: TodoService,
+    private tareasService: TareasService
   ) { }
 
   // --- Helpers usados por Dashboard ---
@@ -49,13 +54,6 @@ export class TestsComponent implements OnInit {
     return tests.reduce((sum, t) => sum + ((t?.preguntas ?? []).length), 0);
   }
 
-  static getTestDonutStyles(tests: any[] | null | undefined): { [k: string]: string } {
-    const total = Array.isArray(tests) ? tests.length : 0;
-    if (!total) return { background: 'conic-gradient(var(--bs-secondary) 0 360deg)' };
-    const completed = tests!.filter(t => (t?.logros ?? []).length > 0).length;
-    const pctCompleted = (completed / total) * 360;
-    return { background: `conic-gradient(#15297c 0 ${pctCompleted}deg, var(--bs-primary) ${pctCompleted}deg 360deg)` };
-  }
 
   static getCompletedPercent(tests: any[] | null | undefined): number {
     if (!Array.isArray(tests) || tests.length === 0) return 0;
@@ -181,16 +179,42 @@ export class TestsComponent implements OnInit {
 
   // Flujo usuario
   abrirResponderTest(t: TestItem): void {
-    this.testAResponder = t;
-    this.respuestasUsuario = (t.preguntas || []).map(() => '');
-    const modalEl = document.getElementById('modalResponderTest');
-    if (modalEl && typeof window !== 'undefined') {
-      const anyWin = window as any;
-      const modal = anyWin.bootstrap?.Modal?.getOrCreateInstance
-        ? anyWin.bootstrap.Modal.getOrCreateInstance(modalEl)
-        : new anyWin.bootstrap.Modal(modalEl);
-      modal.show();
-    }
+    // Gatear por TODOs de la categoría del usuario
+    const categoriaId = this.authService.categoriaId;
+    const userId = this.authService.id;
+    if (!userId) { this.alert.warning('Debes iniciar sesión.'); return; }
+
+    forkJoin({ todos: this.todoService.getAll(), tareas: this.tareasService.getAll({ usuarioId: userId }) }).subscribe({
+      next: ({ todos, tareas }) => {
+        const completadas = new Set<string>((tareas || []).map((x: any) => String(x?.tareaCompletada || '')));
+        const todosDeCategoria = (todos || []).filter(td => (!categoriaId || String(td.categoriaId || '') === String(categoriaId)));
+        const tienePendientes = todosDeCategoria.some(td => {
+          const todoId = String((td as any)?._id || '');
+          const bases = Array.isArray((td as any)?.tareasBase) ? (td as any).tareasBase : [];
+          return bases.some((_: any, idx: number) => !completadas.has(`custom:${todoId}#${idx}`));
+        });
+        if (tienePendientes) {
+          this.alert.info('Debes completar tus tareas asignadas antes de realizar el test.');
+          return;
+        }
+
+        // Auto-crear una tarea completada al iniciar el test
+        const code = `test:start:${t._id}`;
+        this.tareasService.create({ usuarioId: userId, tareaCompletada: code } as any).subscribe({ next: () => {}, error: () => {} });
+
+        this.testAResponder = t;
+        this.respuestasUsuario = (t.preguntas || []).map(() => '');
+        const modalEl = document.getElementById('modalResponderTest');
+        if (modalEl && typeof window !== 'undefined') {
+          const anyWin = window as any;
+          const modal = anyWin.bootstrap?.Modal?.getOrCreateInstance
+            ? anyWin.bootstrap.Modal.getOrCreateInstance(modalEl)
+            : new anyWin.bootstrap.Modal(modalEl);
+          modal.show();
+        }
+      },
+      error: () => this.alert.error('No se pudieron validar tus tareas pendientes.')
+    });
   }
 
   cerrarResponderTest(): void {
@@ -228,7 +252,8 @@ export class TestsComponent implements OnInit {
 
         if (aprobado) {
           this.alert.success(nombresLogros ? `¡Aprobado! Logros obtenidos: ${nombresLogros}` : '¡Aprobado! Sin nuevos logros.');
-          this.marcarComoRealizadoLocal(userId, testId);
+          // Registrar tarea completada para checklist de test
+          this.tareasService.create({ usuarioId: userId, tareaCompletada: `test:${testId}` } as any).subscribe({ next: () => {}, error: () => {} });
           this.recalcularListasUsuario();
         } else {
           this.alert.info('No aprobado. ¡Sigue intentando, puedes lograrlo!');
@@ -239,30 +264,12 @@ export class TestsComponent implements OnInit {
     });
   }
 
-  // LocalStorage para tests completados
-  private obtenerCompletadosUsuario(userId: string | null): Set<string> {
-    if (!userId) return new Set();
-    try {
-      const raw = localStorage.getItem(this.completedKeyPrefix + userId);
-      return new Set(raw ? JSON.parse(raw) : []);
-    } catch { return new Set(); }
-  }
-
-  private guardarCompletadosUsuario(userId: string, setIds: Set<string>) {
-    try { localStorage.setItem(this.completedKeyPrefix + userId, JSON.stringify(Array.from(setIds))); } catch { }
-  }
-
-  private marcarComoRealizadoLocal(userId: string, testId: string) {
-    const current = this.obtenerCompletadosUsuario(userId);
-    current.add(testId);
-    this.guardarCompletadosUsuario(userId, current);
-  }
-
   private recalcularListasUsuario(): void {
     const userId = this.authService.id;
     if (!userId) { this.testsPendientes = [...this.tests]; this.testsRealizados = []; return; }
-    const done = this.obtenerCompletadosUsuario(userId);
-    this.testsRealizados = this.tests.filter(t => t._id && done.has(t._id));
-    this.testsPendientes = this.tests.filter(t => !(t._id && done.has(t._id)));
+    // Marcamos realizados con presencia de logros (proxy) o usando Tareas si se quiere refinar
+    const realizados = new Set<string>((this.tests || []).filter(t => (t?.logros ?? []).length > 0).map(t => String(t._id)));
+    this.testsRealizados = this.tests.filter(t => t._id && realizados.has(String(t._id)));
+    this.testsPendientes = this.tests.filter(t => !(t._id && realizados.has(String(t._id))));
   }
 }

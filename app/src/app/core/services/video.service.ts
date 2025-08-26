@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { VideoItem } from '../models/video.model';
 
 @Injectable({ providedIn: 'root' })
@@ -10,7 +11,15 @@ export class VideoService {
   constructor(private http: HttpClient) {}
 
   getAll(): Observable<VideoItem[]> {
-    return this.http.get<VideoItem[]>(`${this.apiUrl}/`);
+    return this.http.get<VideoItem[]>(`${this.apiUrl}/`).pipe(
+      map((items: any[]) =>
+        (items || []).map((v: any) => ({
+          ...v,
+          categoriaId: (v?.categoriaId && typeof v.categoriaId === 'object') ? (v.categoriaId?._id ?? null) : (v?.categoriaId ?? null),
+          categoriaNombre: (v?.categoriaId && typeof v.categoriaId === 'object') ? (v.categoriaId?.nombre ?? '') : '',
+        }))
+      )
+    );
   }
 
   getOne(id: string): Observable<VideoItem> {

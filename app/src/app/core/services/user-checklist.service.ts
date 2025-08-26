@@ -5,6 +5,7 @@ import { VideoService } from './video.service';
 import { TodoService } from './todo.service';
 import { TareasService } from './tareas.service';
 import {ChecklistItem} from '../models/todo.model';
+import { ArticuloService } from './articulo.service';
 
 
 @Injectable({ providedIn: 'root' })
@@ -12,6 +13,7 @@ export class UserChecklistService {
   constructor(
     private tests: TestService,
     private videos: VideoService,
+    private articulos: ArticuloService,
     private todos: TodoService,
     private tareas: TareasService,
   ) { }
@@ -21,26 +23,35 @@ export class UserChecklistService {
     return forkJoin([
       this.tests.getAll(),
       this.videos.getAll(),
+      this.articulos.getAll(),
       this.todos.getAll(),
       this.tareas.getAll({ usuarioId: userId }),
     ]).pipe(
-      map(([tests, videos, todos, tareas]) => {
+      map(([tests, videos, articulos, todos, tareas]) => {
         const completed = new Set<string>((tareas || []).map(t => String((t as any)?.tareaCompletada || '')));
         const items: ChecklistItem[] = [];
         for (const t of tests || []) {
           const code = `test:${(t as any)?._id || ''}`;
-          items.push({ code, title: `${(t?.preguntas || []).length} preguntas`, type: 'test', completed: completed.has(code) });
+          items.push({ code, title: `${(t?.preguntas || []).length} preguntas`, type: 'test', completed: completed.has(code), categoriaId: null });
         }
         for (const v of videos || []) {
           const code = `video:${(v as any)?._id || ''}`;
-          items.push({ code, title: String((v as any)?.titulo || 'Video'), type: 'video', completed: completed.has(code) });
+          const vCat = (v as any)?.categoriaId;
+          const videoCatId = (vCat && typeof vCat === 'object') ? (vCat?._id ?? null) : (vCat ?? null);
+          items.push({ code, title: String((v as any)?.titulo || 'Video'), type: 'video', completed: completed.has(code), categoriaId: videoCatId ? String(videoCatId) : null });
+        }
+        for (const a of articulos || []) {
+          const code = `articulo:${(a as any)?._id || ''}`;
+          const aCat = (a as any)?.categoriaId;
+          const articuloCatId = (aCat && typeof aCat === 'object') ? (aCat?._id ?? null) : (aCat ?? null);
+          items.push({ code, title: String((a as any)?.titulo || 'Artículo'), type: 'articulo', completed: completed.has(code), categoriaId: articuloCatId ? String(articuloCatId) : null });
         }
         for (const td of todos || []) {
           const todoId = String((td as any)?._id || '');
           const list = Array.isArray((td as any)?.tareasBase) ? (td as any).tareasBase : [];
           list.forEach((tb: any, idx: number) => {
             const code = `custom:${todoId}#${idx}`;
-            items.push({ code, title: String(tb?.nombreTarea || 'Tarea'), type: 'custom', completed: completed.has(code) });
+            items.push({ code, title: String(tb?.nombreTarea || 'Tarea'), type: 'custom', completed: completed.has(code), categoriaId: String((td as any)?.categoriaId || '') || null });
           });
         }
         return items;

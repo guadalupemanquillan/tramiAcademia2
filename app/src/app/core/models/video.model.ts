@@ -3,6 +3,7 @@ export interface VideoItem {
   urlYouTube: string;
   titulo: string;
   categoriaId?: string | null;
+  categoriaNombre?: string;
 }
 
 

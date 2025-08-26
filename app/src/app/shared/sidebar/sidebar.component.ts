@@ -23,7 +23,7 @@ export class SidebarComponent {
     { label: 'Categorías', icon: 'bi-tags-fill', route: '/admin/categoria' },
     { label: 'Tests', icon: 'bi-clipboard2-check-fill', route: '/admin/tests' },
     { label: 'Tareas', icon: 'bi-clipboard2-data-fill', route: '/admin/tareas' },
-    { label: 'Todo', icon: 'bi-list-task', route: '/admin/todo' },
+    { label: 'Tareas a realizar', icon: 'bi-list-task', route: '/admin/todo' },
     { label: 'Video', icon: 'bi-camera-video-fill', route: '/admin/video' },
     { label: 'Logros', icon: 'bi-trophy-fill', route: '/admin/logro' },
     { label: 'Artículos', icon: 'bi-journal-text', route: '/admin/articulos' },
@@ -32,7 +32,7 @@ export class SidebarComponent {
   userMenu: MenuItem[] = [
     { label: 'Dashboard', icon: 'bi-house-fill', route: '/dashboard/usuario' },
     { label: 'Tests', icon: 'bi-clipboard2-check-fill', route: '/usuario/test' },
-    { label: 'Todo', icon: 'bi-list-task', route: '/usuario/todo' },
+    { label: 'Tareas a realizar', icon: 'bi-list-task', route: '/usuario/todo' },
     { label: 'Video', icon: 'bi-camera-video-fill', route: '/usuario/video' },
     { label: 'Logros', icon: 'bi-trophy-fill', route: '/usuario/logro' },
     { label: 'Artículos', icon: 'bi-journal-text', route: '/usuario/articulos' },

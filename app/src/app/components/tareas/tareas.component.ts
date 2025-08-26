@@ -16,9 +16,6 @@ import { AuthService } from '../../core/services/auth.service';
 export class TareasComponent implements OnInit {
   tareas: Tarea[] = [];
   loading = true;
-  // Formulario único para crear/editar
-  tareaForm: Partial<Tarea> = { usuarioId: '', completada: false };
-  modoForm: 'crear' | 'editar' = 'crear';
 
   constructor(
     private tareasService: TareasService,
@@ -39,42 +36,8 @@ export class TareasComponent implements OnInit {
     });
   }
 
-  abrirCrearTarea(): void {
-    this.modoForm = 'crear';
-    this.tareaForm = { usuarioId: '', completada: false };
-  }
-
-  abrirEditarTarea(t: Tarea): void {
-    this.modoForm = 'editar';
-    this.tareaForm = { ...t };
-  }
-
-  guardarTarea(): void {
-    if (!this.tareaForm.usuarioId) return;
-
-    if (this.modoForm === 'crear') {
-      this.tareasService.create(this.tareaForm).subscribe({
-        next: () => { this.cargarTareas(); this.alert.success('Tarea creada.'); },
-        error: () => this.alert.error('No se pudo crear la tarea.')
-      });
-    } else if (this.modoForm === 'editar' && this.tareaForm._id) {
-      const { _id, ...rest } = this.tareaForm;
-      this.tareasService.update(_id!, rest).subscribe({
-        next: () => { this.cargarTareas(); this.alert.success('Tarea actualizada.'); },
-        error: () => this.alert.error('No se pudo actualizar la tarea.')
-      });
-    }
-  }
-
-  confirmarEliminar(t: Tarea): void {
-    this.alert.confirm('¿Eliminar tarea?').then(ok => {
-      if (!ok || !t._id) return;
-      this.tareasService.delete(t._id).subscribe({
-        next: () => { this.cargarTareas(); this.alert.success('Tarea eliminada.'); },
-        error: () => this.alert.error('No se pudo eliminar la tarea.')
-      });
-    });
-  }
+  // Crear/editar/eliminar deshabilitado por requerimiento
+  // Se deja solo lectura
   displayUsuario(usuarioId: string | UsuarioRef): string {
     if (!usuarioId) return '';
     if (typeof usuarioId === 'object' && usuarioId !== null) {

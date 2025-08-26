@@ -14,6 +14,7 @@ export class AuthService {
   private roleSubject = new BehaviorSubject<string | null>(null);
   private idSubject = new BehaviorSubject<string | null>(null);
   private nameSubject = new BehaviorSubject<string | null>(null);
+  private categoriaIdSubject = new BehaviorSubject<string | null>(null);
 
   constructor(
     private http: HttpClient,
@@ -101,6 +102,10 @@ export class AuthService {
     return this.nameSubject.asObservable();
   }
 
+  get categoriaId$(): Observable<string | null> {
+    return this.categoriaIdSubject.asObservable();
+  }
+
   get role(): string | null {
     return this.roleSubject.value;
   }
@@ -113,6 +118,10 @@ export class AuthService {
     return this.nameSubject.value;
   }
 
+  get categoriaId(): string | null {
+    return this.categoriaIdSubject.value;
+  }
+
   private decodeAndStoreClaims(token: string): void {
     try {
       if (!isPlatformBrowser(this.platformId)) {
@@ -123,8 +132,10 @@ export class AuthService {
       const payload = JSON.parse(json);
       const role = payload?.role ?? null;
       const id = payload?.id ?? null;
+      const categoriaId = payload?.categoriaId ?? null;
       this.roleSubject.next(role);
       this.idSubject.next(id);
+      this.categoriaIdSubject.next(categoriaId);
       // Intentar cargar el nombre del usuario si hay id
       if (id) {
         this.fetchUserName(id);

@@ -138,4 +138,6 @@ export class CategoriasComponent {
       });
     });
   }
+
+  trackCategoria(index: number, c: Categoria): string | number { return c?._id || index; }
 }

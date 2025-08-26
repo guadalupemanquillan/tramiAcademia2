@@ -1,47 +1,138 @@
-<div class="container mt-4">
-  <h2>Gestión de Artículos</h2>
-
-  <!-- Formulario de creación -->
-  <div class="mb-4">
-    <h4>Nuevo Artículo</h4>
-    <form (ngSubmit)="crearArticulo()" #formArticulo="ngForm">
-      <input type="text" [(ngModel)]="nuevoArticulo.titulo" name="titulo" placeholder="Título" required class="form-control mb-2">
-      <textarea [(ngModel)]="nuevoArticulo.texto" name="texto" placeholder="Texto" required class="form-control mb-2"></textarea>
-      <input type="text" [(ngModel)]="nuevoArticulo.autor" name="autor" placeholder="Autor" class="form-control mb-2">
-      <input type="text" [(ngModel)]="nuevoArticulo.categoriaId" name="categoriaId" placeholder="CategoriaId" class="form-control mb-2">
-      <button class="btn btn-primary" type="submit">Crear</button>
-    </form>
+<div class="card shadow-sm mx-4 mt-3">
+  <div class="card-header bg-primary-subtle text-primary-emphasis d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">Artículos</h5>
+    <button *ngIf="rolActual === 'editor'" class="btn btn-brand" data-bs-toggle="modal" data-bs-target="#modalCrearArticulo">Crear nuevo artículo</button>
   </div>
+  <div class="card-body">
 
-  <!-- Lista de artículos -->
-  <div *ngIf="articulos.length > 0">
-    <h4>Lista de Artículos</h4>
-    <ul class="list-group">
-      <li *ngFor="let articulo of articulos" class="list-group-item">
-        <!-- Modo visualización -->
-        <div *ngIf="!editandoActivo || editando._id !== articulo._id">
-          <h5>{{ articulo.titulo }}</h5>
-          <p>{{ articulo.texto }}</p>
-          <small>Autor: {{ articulo.autor }} | Categoría: {{ articulo.categoriaId }}</small>
-          <br>
-          <button class="btn btn-sm btn-warning me-2" (click)="editarArticulo(articulo)">Editar</button>
-          <button class="btn btn-sm btn-danger" (click)="eliminarArticulo(articulo._id!)">Eliminar</button>
-        </div>
+    <div class="d-flex align-items-center flex-wrap gap-2 mb-3">
+      <select id="categoriaFiltro" class="form-select form-select-lg w-auto me-2" [(ngModel)]="categoriaSeleccionada" name="categoriaFiltro">
+        <option value="">Todas</option>
+        <option *ngFor="let cat of categorias; trackBy: trackCategoria" [value]="cat._id">{{ cat.nombre }}</option>
+      </select>
+      <label class="form-label mb-0" for="categoriaFiltro">Filtrar por categoría</label>
+    </div>
 
-        <!-- Modo edición -->
-        <div *ngIf="editandoActivo && editando._id === articulo._id">
-          <input type="text" [(ngModel)]="editando.titulo" name="tituloEdit" class="form-control mb-2">
-          <textarea [(ngModel)]="editando.texto" name="textoEdit" class="form-control mb-2"></textarea>
-          <input type="text" [(ngModel)]="editando.autor" name="autorEdit" class="form-control mb-2">
-          <input type="text" [(ngModel)]="editando.categoriaId" name="categoriaEdit" class="form-control mb-2">
-          <button class="btn btn-sm btn-success me-2" (click)="actualizarArticulo()">Guardar</button>
-          <button class="btn btn-sm btn-secondary" (click)="cancelarEdicion()">Cancelar</button>
-        </div>
-      </li>
-    </ul>
+    <div class="table-responsive" *ngIf="articulosFiltrados.length > 0; else vacio">
+      <table class="table table-striped table-hover align-middle">
+        <thead class="bg-primary text-white">
+          <tr>
+            <th class="w-50">Título</th>
+            <th class="text-nowrap">Autor</th>
+            <th class="text-nowrap">Categoría</th>
+            <th class="text-end" *ngIf="rolActual === 'editor'">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let articulo of articulosFiltrados; trackBy: trackArticulo">
+            <td class="w-50">{{ articulo.titulo }}</td>
+            <td class="text-nowrap">{{ articulo.autor || '—' }}</td>
+            <td class="text-nowrap">{{ obtenerNombreCategoria(articulo.categoriaId) }}</td>
+            <td class="text-end" *ngIf="rolActual === 'editor'; else accionesUsuario">
+              <div class="d-inline-flex align-items-center gap-2">
+                <button class="btn btn-link text-dark p-0" data-bs-toggle="modal" data-bs-target="#modalVerArticulo" (click)="verArticulo(articulo)" title="Ver">
+                  <i class="bi bi-eye-fill"></i>
+                </button>
+                <button class="btn btn-link text-dark p-0" data-bs-toggle="modal" data-bs-target="#modalEditarArticulo" (click)="editarArticulo(articulo)" title="Editar">
+                  <i class="bi bi-pencil-fill"></i>
+                </button>
+                <button class="btn btn-link text-dark p-0" (click)="eliminarArticulo(articulo._id!)" title="Eliminar">
+                  <i class="bi bi-trash3-fill"></i>
+                </button>
+              </div>
+            </td>
+            <ng-template #accionesUsuario>
+              <td class="text-end">
+                <button class="btn btn-link text-dark p-0" data-bs-toggle="modal" data-bs-target="#modalVerArticulo" (click)="verArticulo(articulo)" title="Ver">
+                  <i class="bi bi-eye-fill"></i>
+                </button>
+              </td>
+            </ng-template>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <ng-template #vacio>
+      <div class="text-muted small">No hay artículos registrados.</div>
+    </ng-template>
   </div>
+</div>
 
-  <div *ngIf="articulos.length === 0">
-    <p>No hay artículos registrados.</p>
+<!-- Modal Crear -->
+<div class="modal fade" id="modalCrearArticulo" tabindex="-1" aria-hidden="true" *ngIf="rolActual === 'editor'">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Nuevo Artículo</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form (ngSubmit)="crearArticulo()" #formArticulo="ngForm">
+          <label class="form-label" for="titulo">Título</label>
+          <input id="titulo" type="text" [(ngModel)]="nuevoArticulo.titulo" name="titulo" placeholder="Título" required class="form-control mb-2">
+          <label class="form-label" for="texto">Texto</label>
+          <textarea id="texto" [(ngModel)]="nuevoArticulo.texto" name="texto" placeholder="Texto" required class="form-control mb-2"></textarea>
+          <label class="form-label" for="autor">Autor</label>
+          <input id="autor" type="text" [(ngModel)]="nuevoArticulo.autor" name="autor" placeholder="Autor" class="form-control mb-2">
+          <label class="form-label" for="categoriaId">Categoría</label>
+          <select id="categoriaId" class="form-select mb-2" [(ngModel)]="nuevoArticulo.categoriaId" name="categoriaId" required>
+            <option value="">Seleccionar categoría</option>
+            <option *ngFor="let cat of categorias; trackBy: trackCategoria" [value]="cat._id">{{ cat.nombre }}</option>
+          </select>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" (click)="crearArticulo()">Crear</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Ver Artículo -->
+<div class="modal fade" id="modalVerArticulo" tabindex="-1" aria-hidden="true" *ngIf="articuloVer">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">{{ articuloVer.titulo }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-2 text-muted small">Autor: {{ articuloVer.autor || '—' }} · Categoría: {{ obtenerNombreCategoria(articuloVer.categoriaId) }}</div>
+        <div class="border rounded p-3 pre-wrap">{{ articuloVer.texto }}</div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Editar -->
+<div class="modal fade" id="modalEditarArticulo" tabindex="-1" aria-hidden="true" *ngIf="rolActual === 'editor' && editandoActivo">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Editar Artículo</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <label class="form-label">Título</label>
+        <input type="text" [(ngModel)]="editando.titulo" name="tituloEdit" class="form-control mb-2">
+        <label class="form-label">Texto</label>
+        <textarea [(ngModel)]="editando.texto" name="textoEdit" class="form-control mb-2"></textarea>
+        <label class="form-label">Autor</label>
+        <input type="text" [(ngModel)]="editando.autor" name="autorEdit" class="form-control mb-2">
+        <label class="form-label">Categoría</label>
+        <select class="form-select mb-2" [(ngModel)]="editando.categoriaId" name="categoriaEdit">
+          <option value="">Seleccionar categoría</option>
+          <option *ngFor="let cat of categorias" [value]="cat._id">{{ cat.nombre }}</option>
+        </select>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal" (click)="cancelarEdicion()">Cancelar</button>
+        <button class="btn btn-primary" (click)="actualizarArticulo()">Guardar</button>
+      </div>
+    </div>
   </div>
 </div>
