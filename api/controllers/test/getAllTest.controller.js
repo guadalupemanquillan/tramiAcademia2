@@ -2,7 +2,8 @@ const { getAllTestService } = require("../../services/test/getAllTest.service");
 
 exports.getAllTestController = async (req, res) => {
   try {
-    const tests = await getAllTestService();
+    const role = req.user?.role || 'usuario';
+    const tests = await getAllTestService(role);
     res.json({ tests });
   } catch (error) {
     console.error(error);

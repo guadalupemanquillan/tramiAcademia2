@@ -13,7 +13,7 @@ import { RouterModule } from '@angular/router';
   imports: [CommonModule, RouterModule]
 })
 export class NavbarComponent {
-  constructor(private authService: AuthService, private router: Router, @Inject(PLATFORM_ID) private platformId: Object) {}
+  constructor(private authService: AuthService, private router: Router, @Inject(PLATFORM_ID) private platformId: Object) { }
 
   get roleLabel(): string {
     return this.authService.role === 'editor' ? 'editor' : 'usuario';
@@ -30,7 +30,7 @@ export class NavbarComponent {
     }
   }
 
-  
+
 }
 
 

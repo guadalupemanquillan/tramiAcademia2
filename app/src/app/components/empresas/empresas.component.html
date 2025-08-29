@@ -84,7 +84,7 @@
     </div>
   </div>
   <!-- Modal Crear / Editar -->
-  <div class="modal fade" id="modalEmpresa" tabindex="-1" aria-hidden="true">
+  <div class="modal fade" id="modalEmpresa" tabindex="-1">
     <div class="modal-dialog">
       <div class="modal-content" *ngIf="empresaForm">
         <div class="modal-header">
@@ -110,7 +110,7 @@
     </div>
   </div>
   <!-- Modal Detalle Empresa -->
-  <div class="modal fade" id="modalImagenEmpresa" tabindex="-1" aria-hidden="true" [class.show]="modalEmpresa"
+  <div class="modal fade" id="modalImagenEmpresa" tabindex="-1" [class.show]="modalEmpresa"
     [style.display]="modalEmpresa ? 'block' : 'none'" (click)="onModalBackdropClick($event)">
     <div class="modal-dialog modal-dialog-centered modal-sm" (click)="$event.stopPropagation()">
       <div class="modal-content">

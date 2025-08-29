@@ -8,7 +8,7 @@ import { VideoItem } from '../models/video.model';
 export class VideoService {
   private apiUrl = 'http://localhost:8080/api/video';
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   getAll(): Observable<VideoItem[]> {
     return this.http.get<VideoItem[]>(`${this.apiUrl}/`).pipe(

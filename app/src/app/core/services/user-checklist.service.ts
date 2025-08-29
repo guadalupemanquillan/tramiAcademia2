@@ -3,7 +3,7 @@
 // o desmarcar ítems como completados, es decir esta conectado con los botones 
 // de video finalizado , articulo leido. 
 // guardando ese estado en la base de datos.
-
+// con esto se completa tareas 
 import { Injectable } from '@angular/core';
 import { Observable, forkJoin, map, of, switchMap } from 'rxjs';
 import { TestService } from './test.service';

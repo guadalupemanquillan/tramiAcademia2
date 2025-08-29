@@ -8,7 +8,7 @@ import { TodoItem } from '../models/todo.model';
 export class TodoService {
   private apiUrl = 'http://localhost:8080/api/todo';
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   getAll(): Observable<TodoItem[]> {
     return this.http.get<TodoItem[]>(`${this.apiUrl}/`).pipe(

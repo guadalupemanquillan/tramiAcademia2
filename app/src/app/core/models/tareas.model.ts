@@ -4,9 +4,16 @@ export interface Tarea {
   _id?: string;
   usuarioId: string | UsuarioRef;
   tareaCompletada?: string;
-  completada?: boolean;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface UsuarioTareas {
+  usuarioId: string;
+  nombreUsuario: string;
+  totalTareas: number;
+  tareas: Tarea[];
+  expanded: boolean;
 }
 
 

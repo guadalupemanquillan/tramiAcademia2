@@ -15,7 +15,8 @@ const logrosSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   }
- },
+ },//este campo lo agrego para que al
+ //usuario no le aprezcan losgros eliminados
   {
     timestamps: true,
   }

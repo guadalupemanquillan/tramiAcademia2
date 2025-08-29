@@ -16,7 +16,7 @@ export class UserProgressService {
     private tests: TestService,
     private users: UserService,
     private auth: AuthService
-  ) {}
+  ) { }
 
   getEligibleTestsForCurrentUser(): Observable<TestItem[]> {
     const userId = this.auth.id;

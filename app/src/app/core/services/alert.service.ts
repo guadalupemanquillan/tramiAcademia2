@@ -7,6 +7,17 @@ export class AlertService {
     return Swal.fire(title, message, 'success');
   }
 
+  successWithAutoClose(message: string, title: string = '¡Éxito!', autoCloseTime: number = 1500) {
+    return Swal.fire({
+      title,
+      text: message,
+      icon: 'success',
+      timer: autoCloseTime,
+      showConfirmButton: false,
+      timerProgressBar: true
+    });
+  }
+
   error(message: string, title: string = '¡Error!') {
     return Swal.fire(title, message, 'error');
   }
@@ -23,12 +34,13 @@ export class AlertService {
     text: string,
     title: string = 'Confirmación',
     confirmButtonText: string = 'Sí',
-    cancelButtonText: string = 'Cancelar'
+    cancelButtonText: string = 'Cancelar',
+    icon: SweetAlertIcon = 'question'
   ): Promise<boolean> {
     return Swal.fire({
       title,
       text,
-      icon: 'question' as SweetAlertIcon,
+      icon,
       showCancelButton: true,
       confirmButtonText,
       cancelButtonText,

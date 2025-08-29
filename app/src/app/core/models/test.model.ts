@@ -9,6 +9,7 @@ export interface TestItem {
   nombre?: string;
   preguntas: TestPregunta[];
   logros?: { nombre: string; iconoUrl: string }[];
+  isDeleted?: boolean;
 }
 
 

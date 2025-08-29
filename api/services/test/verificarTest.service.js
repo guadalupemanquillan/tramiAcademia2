@@ -66,14 +66,12 @@ exports.verificarTestService = async ({ userId, testId, respuestas }) => {
       await user.save();
     }
   }
-  // Crear una tarea de registro al finalizar intento (si aprobó, con nombre del test)
   try {
     const nombreTarea = aprobado
       ? `Test completado: ${test.nombre || "Sin nombre"}`
       : `Test intentado: ${test.nombre || "Sin nombre"}`;
     await Tareas.create({ usuarioId: user._id, tareaCompletada: nombreTarea });
   } catch (e) {
-    // no bloquear por error de log
   }
 
   return {

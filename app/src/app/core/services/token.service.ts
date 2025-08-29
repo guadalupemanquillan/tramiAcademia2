@@ -5,7 +5,7 @@ import { isPlatformBrowser } from '@angular/common';
 export class TokenService {
   private tokenKey = 'auth_token';
 
-  constructor(@Inject(PLATFORM_ID) private platformId: Object) {}
+  constructor(@Inject(PLATFORM_ID) private platformId: Object) { }
 
   getToken(): string | null {
     if (isPlatformBrowser(this.platformId)) {

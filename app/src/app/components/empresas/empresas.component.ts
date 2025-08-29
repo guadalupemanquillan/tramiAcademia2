@@ -134,7 +134,13 @@ export class EmpresasComponent implements OnInit {
     }
   }
   confirmarEliminarEmpresa(empresa: Empresa): void {
-    this.alert.confirm(`¿Confirmas eliminar la empresa "${empresa.nombre}"?`).then(confirmed => {
+    this.alert.confirm(
+      `¿Confirmas eliminar la empresa "${empresa.nombre}"?`,
+      'Esta acción no se puede deshacer.',
+      'Sí, eliminar',
+      'Cancelar',
+      'warning'
+    ).then(confirmed => {
       if (!confirmed || !empresa._id) return;
       this.empresaService.delete(empresa._id).subscribe({
         next: () => { this.cargarEmpresas(); this.alert.success('Empresa eliminada correctamente'); },

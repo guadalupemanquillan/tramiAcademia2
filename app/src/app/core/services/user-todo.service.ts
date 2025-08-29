@@ -9,7 +9,7 @@ import { AuthService } from './auth.service';
 
 @Injectable({ providedIn: 'root' })
 export class UserTodoService {
-  constructor(private todos: TodoService, private auth: AuthService) {}
+  constructor(private todos: TodoService, private auth: AuthService) { }
 
   getActiveTodosForCurrentUser(): Observable<TodoItem[]> {
     const categoriaId = this.auth.categoriaId;

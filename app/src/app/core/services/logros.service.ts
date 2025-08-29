@@ -17,7 +17,7 @@ export class LogrosService {
     return this.http.get<Logros>(`${this.apiUrl}/${id}`);
   }
 
-  create(body: { userId: string; nombre: string; iconoUrl: string }): Observable<Logros> {
+  create(body: { nombre: string; iconoUrl: string }): Observable<Logros> {
     return this.http.post<Logros>(`${this.apiUrl}/`, body);
   }
 

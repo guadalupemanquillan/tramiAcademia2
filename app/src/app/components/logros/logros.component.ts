@@ -6,8 +6,8 @@ import { LogrosService } from '../../core/services/logros.service';
 import { Logros } from '../../core/models/logros.model';
 import { AuthService } from '../../core/services/auth.service';
 import { AlertService } from '../../core/services/alert.service';
-import { User } from '../../core/models/user.model';
 import { UserService } from '../../core/services/user.service';
+import { User } from '../../core/models/user.model';
 
 @Component({
   selector: 'app-logros',
@@ -17,39 +17,29 @@ import { UserService } from '../../core/services/user.service';
 })
 export class LogrosComponent implements OnInit {
   logros: Logros[] = [];
-  nuevoLogro: Logros = { nombre: '', iconoUrl: '' } as Logros;
   logroEditar: Partial<Logros> | null = null;
   loading: boolean = true;
   users: User[] = [];
-  userSeleccionadoId: string | null = null;
+  usuariosLogros: any[] = [];
+  
+
 
   constructor(
     private logrosService: LogrosService,
+    private userService: UserService,
     public authService: AuthService,
     private cdr: ChangeDetectorRef,
-    private alert: AlertService,
-    private userService: UserService
+    private alert: AlertService
   ) { }
 
   ngOnInit(): void {
     this.cargarLogros();
-    // Solo el editor necesita el listado de usuarios para asignar logros
     if (this.authService.role === 'editor') {
       this.cargarUsuarios();
     }
   }
 
   // --- Helpers usados por Dashboard ---
-  static countActiveLogros(items: any[] | null | undefined): number {
-    if (!Array.isArray(items)) return 0;
-    return items.filter(l => l?.activo === true || l?.isActive === true || l?.estado === 'activo').length;
-  }
-
-  static countInactiveLogros(items: any[] | null | undefined): number {
-    if (!Array.isArray(items)) return 0;
-    return items.filter(l => l?.activo === false || l?.isActive === false || l?.estado === 'inactivo').length;
-  }
-
   static getUserLogrosCount(user: any | null | undefined, allLogros: any[] | null | undefined): number {
     if (user && Array.isArray(user.logros)) return user.logros.length;
     if (!user || !Array.isArray(allLogros)) return 0;
@@ -83,51 +73,81 @@ export class LogrosComponent implements OnInit {
     return best;
   }
 
+  cargarUsuarios(): void {
+    this.userService.getAll().subscribe({
+      next: (users) => {
+        this.users = users;
+      },
+      error: () => {
+        this.alert.error('Error al cargar usuarios');
+      }
+    });
+  }
+
   cargarLogros(): void {
     this.loading = true;
     const role = this.authService.role;
     if (role === 'usuario' && this.authService.id) {
       this.logrosService.getAll().subscribe((logros: Logros[]) => {
         const uid = String(this.authService.id);
-        this.logros = (logros || []).filter(l => String((l as any)?.usuarioId || '') === uid || (Array.isArray((this as any)?.authService?.logros) && (this as any).authService.logros.includes(String((l as any)?._id || ''))));
+        this.logros = (logros || []).filter(l => {
+          const logroUserId = typeof l.usuarioId === 'string' 
+            ? l.usuarioId 
+            : (l.usuarioId as any)?._id;
+          
+          return String(logroUserId || '') === uid || 
+                 (Array.isArray((this as any)?.authService?.logros) && 
+                  (this as any).authService.logros.includes(String((l as any)?._id || '')));
+        });
         this.loading = false;
         this.cdr.detectChanges();
       });
     } else {
       this.logrosService.getAll().subscribe((logros: Logros[]) => {
         this.logros = logros;
+        this.organizarLogrosPorUsuario();
         this.loading = false;
         this.cdr.detectChanges();
       });
     }
   }
 
-  private cargarUsuarios(): void {
-    this.userService.getAll().subscribe({
-      next: (users) => { this.users = users || []; this.cdr.detectChanges(); },
-      error: () => { this.users = []; }
+  organizarLogrosPorUsuario(): void {
+    const logrosPorUsuario = new Map<string, any>();
+    
+    this.logros.forEach(logro => {
+      let usuarioId = '';
+      let nombreUsuario = 'Usuario';
+      
+      if (typeof logro.usuarioId === 'string') {
+        usuarioId = logro.usuarioId;
+        const user = this.users.find(u => u._id === usuarioId);
+        nombreUsuario = user ? (user.nombreCompleto || user.nombre || 'Usuario') : 'Usuario';
+      } else if (logro.usuarioId && typeof logro.usuarioId === 'object') {
+        usuarioId = (logro.usuarioId as any)._id || '';
+        nombreUsuario = (logro.usuarioId as any).nombreCompleto || (logro.usuarioId as any).nombre || 'Usuario';
+      }
+      
+      if (!logrosPorUsuario.has(usuarioId)) {
+        logrosPorUsuario.set(usuarioId, {
+          usuarioId: usuarioId,
+          nombreUsuario: nombreUsuario,
+          totalLogros: 0,
+          logros: [],
+          expanded: false
+        });
+      }
+      
+      const usuario = logrosPorUsuario.get(usuarioId);
+      usuario.logros.push(logro);
+      usuario.totalLogros++;
     });
+    
+    this.usuariosLogros = Array.from(logrosPorUsuario.values());
   }
 
-  crearLogro(): void {
-    const userId = this.userSeleccionadoId || this.authService.id;
-    if (!userId || !this.nuevoLogro.nombre || !this.nuevoLogro.iconoUrl) {
-      this.alert.warning('Selecciona un usuario, nombre e icono.');
-      return;
-    }
-    this.logrosService.create({ userId, nombre: this.nuevoLogro.nombre, iconoUrl: this.nuevoLogro.iconoUrl }).subscribe({
-      next: () => {
-        this.nuevoLogro = { nombre: '', iconoUrl: '' } as Logros;
-        this.userSeleccionadoId = null;
-        (document.getElementById('crearLogroCerrarBtn') as HTMLButtonElement)?.click();
-        this.cargarLogros();
-        this.alert.success('El logro se creó correctamente.');
-      },
-      error: (err) => {
-        const msg = err?.error?.error || 'No se pudo crear el logro.';
-        this.alert.error(msg);
-      }
-    });
+  toggleExpansion(usuario: any): void {
+    usuario.expanded = !usuario.expanded;
   }
 
   abrirEditarLogro(lg: Logros): void {
@@ -135,7 +155,7 @@ export class LogrosComponent implements OnInit {
       this.logroEditar = { ...x };
     });
   }
-
+  
   guardarEdicionLogro(): void {
     if (!this.logroEditar || !this.logroEditar._id) return;
     const { _id, ...rest } = this.logroEditar as Logros;
@@ -150,8 +170,15 @@ export class LogrosComponent implements OnInit {
       }
     });
   }
+  
   confirmarEliminarLogro(lg: Logros): void {
-    this.alert.confirm(`¿Confirmas eliminar el logro "${lg.nombre}"?`).then(confirmed => {
+    this.alert.confirm(
+      `¿Confirmas eliminar el logro "${lg.nombre}"?`,
+      'Esta acción no se puede deshacer.',
+      'Sí, eliminar',
+      'Cancelar',
+      'warning'
+    ).then(confirmed => {
       if (!confirmed || !lg._id) return;
       this.logrosService.delete(lg._id).subscribe({
         next: () => {
@@ -166,4 +193,11 @@ export class LogrosComponent implements OnInit {
   }
 
   trackLogro(index: number, l: Logros): string | number { return l?._id || index; }
+
+  getUsuarioNombre(logro: Logros): string {
+    if (!logro.usuarioId || typeof logro.usuarioId === 'string') {
+      return '—';
+    }
+    return logro.usuarioId.nombreCompleto || logro.usuarioId.nombre || logro.usuarioId.email || 'Usuario';
+  }
 }

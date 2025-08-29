@@ -3,15 +3,15 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
 import { TestService } from '../../core/services/test.service';
-import { UserProgressService } from '../../core/services/user-progress.service';
 import { TestItem } from '../../core/models/test.model';
 import { AlertService } from '../../core/services/alert.service';
 import { AuthService } from '../../core/services/auth.service';
-import { LogrosService } from '../../core/services/logros.service';
-import { Logros } from '../../core/models/logros.model';
-import { TodoService } from '../../core/services/todo.service';
+import { UserService } from '../../core/services/user.service';
+import { User } from '../../core/models/user.model';
 import { TareasService } from '../../core/services/tareas.service';
 import { forkJoin } from 'rxjs';
+import { VideoService } from '../../core/services/video.service';
+import { ArticuloService } from '../../core/services/articulo.service';
 
 @Component({
   selector: 'app-tests',
@@ -20,22 +20,24 @@ import { forkJoin } from 'rxjs';
   imports: [CommonModule, FormsModule, HttpClientModule]
 })
 export class TestsComponent implements OnInit {
+  // Método estático para el Dashboard
+  static getCompletedCount(tests: TestItem[]): number {
+    if (!Array.isArray(tests)) return 0;
+    return tests.filter(test => !test.isDeleted).length;
+  }
   tests: TestItem[] = [];
   testsPendientes: TestItem[] = [];
   testsRealizados: TestItem[] = [];
 
-  nuevoTest: TestItem = { nombre: '', preguntas: [{ tituloPregunta: '', opcionesRespuesta: ['', ''], respuestaCorrecta: '' }], logros: [] };
+  nuevoTest: TestItem = { nombre: '', preguntas: [{ tituloPregunta: '', opcionesRespuesta: ['', ''], respuestaCorrecta: '' }], logros: [], isDeleted: false };
   testEditar: Partial<TestItem> | null = null;
   loading: boolean = true;
 
-  logrosDisponibles: Logros[] = [];
-  selectedLogroId: string | null = null;
   selectedLogros: { nombre: string; iconoUrl: string; _id?: string }[] = [];
+  nuevoLogro: { nombre: string; iconoUrl: string } = { nombre: '', iconoUrl: '' };
+  mostrarFormularioLogro: boolean = false;
   numPreguntas: number = 1;
 
-  // Eliminado localStorage legacy: usamos TareasService
-
-  // Para realizar test (rol usuario)
   testAResponder: TestItem | null = null;
   respuestasUsuario: string[] = [];
 
@@ -43,31 +45,18 @@ export class TestsComponent implements OnInit {
     private testService: TestService,
     private cdr: ChangeDetectorRef,
     private alert: AlertService,
-    private logrosService: LogrosService,
     public authService: AuthService,
-    private todoService: TodoService,
+    private userService: UserService,
     private tareasService: TareasService,
-    private progress: UserProgressService
+    private videoService: VideoService,
+    private articuloService: ArticuloService
   ) { }
 
-  // --- Helpers usados por Dashboard ---
-  static getTotalQuestions(tests: any[] | null | undefined): number {
-    if (!Array.isArray(tests) || tests.length === 0) return 0;
-    return tests.reduce((sum, t) => sum + ((t?.preguntas ?? []).length), 0);
-  }
 
-
-  static getCompletedPercent(tests: any[] | null | undefined): number {
-    if (!Array.isArray(tests) || tests.length === 0) return 0;
-    const completed = tests.filter(t => (t?.logros ?? []).length > 0).length;
-    return (completed / tests.length) * 100;
-  }
 
   ngOnInit(): void {
     this.cargarTests();
-    this.cargarLogrosDisponibles();
     this.numPreguntas = this.nuevoTest.preguntas.length;
-    // Recargar cuando haya cambios (create/update/delete)
     this.testService.changes$.subscribe(() => this.cargarTests());
   }
 
@@ -76,7 +65,7 @@ export class TestsComponent implements OnInit {
     if (this.authService.role === 'editor') {
       this.testService.getAll().subscribe({
         next: tests => {
-          this.tests = tests;
+          this.tests = tests.filter(test => !test.isDeleted);
           this.recalcularListasUsuario();
           this.loading = false;
           this.cdr.detectChanges();
@@ -84,9 +73,9 @@ export class TestsComponent implements OnInit {
         error: () => this.loading = false
       });
     } else {
-      this.progress.getEligibleTestsForCurrentUser().subscribe({
+      this.testService.getAll().subscribe({
         next: tests => {
-          this.tests = tests;
+          this.tests = tests.filter(test => !test.isDeleted);
           this.recalcularListasUsuario();
           this.loading = false;
           this.cdr.detectChanges();
@@ -96,17 +85,8 @@ export class TestsComponent implements OnInit {
     }
   }
 
-  cargarLogrosDisponibles(): void {
-    this.logrosService.getAll().subscribe({
-      next: logros => this.logrosDisponibles = logros,
-      error: () => this.logrosDisponibles = []
-    });
-  }
-
   trackPregunta(index: number) { return index; }
   trackOpcion(index: number) { return index; }
-
-  // Métodos generales para agregar elementos
   agregarPregunta(enEdicion: boolean = false) {
     const test = enEdicion ? this.testEditar : this.nuevoTest;
     test?.preguntas?.push({ tituloPregunta: '', opcionesRespuesta: ['', ''], respuestaCorrecta: '' });
@@ -150,31 +130,47 @@ export class TestsComponent implements OnInit {
         opcionesRespuesta: p.opcionesRespuesta.filter(o => !!o?.trim()),
         respuestaCorrecta: p.respuestaCorrecta
       })),
-      logros: this.selectedLogros.map(l => ({ nombre: l.nombre, iconoUrl: l.iconoUrl }))
+      logros: this.selectedLogros.map(l => ({ nombre: l.nombre, iconoUrl: l.iconoUrl })),
+      isDeleted: this.nuevoTest.isDeleted
     };
+
     this.testService.create(payload).subscribe({
       next: () => {
-        this.nuevoTest = { nombre: '', preguntas: [{ tituloPregunta: '', opcionesRespuesta: ['', ''], respuestaCorrecta: '' }], logros: [] };
-        this.selectedLogroId = null;
-        this.selectedLogros = [];
-        this.numPreguntas = this.nuevoTest.preguntas.length;
-        (document.getElementById('crearTestCerrarBtn') as HTMLButtonElement)?.click();
-        this.cargarTests();
+        this.resetearFormulario();
         this.alert.success('El test se creó correctamente.');
       },
       error: () => this.alert.error('No se pudo crear el test.')
     });
   }
 
-  // --- Selección múltiple de logros (Crear Test) ---
-  agregarLogroSeleccionado(): void {
-    if (!this.selectedLogroId) return;
-    const lg = this.logrosDisponibles.find(x => x._id === this.selectedLogroId);
-    if (!lg) return;
-    // Evitar duplicados por id o nombre
-    const existe = this.selectedLogros.some(s => (lg._id && s._id === lg._id) || s.nombre === lg.nombre);
-    if (existe) return;
-    this.selectedLogros.push({ nombre: lg.nombre, iconoUrl: lg.iconoUrl, _id: lg._id });
+  private resetearFormulario(): void {
+    this.nuevoTest = { nombre: '', preguntas: [{ tituloPregunta: '', opcionesRespuesta: ['', ''], respuestaCorrecta: '' }], logros: [], isDeleted: false };
+    this.selectedLogros = [];
+    this.nuevoLogro = { nombre: '', iconoUrl: '' };
+    this.mostrarFormularioLogro = false;
+    this.numPreguntas = this.nuevoTest.preguntas.length;
+    (document.getElementById('crearTestCerrarBtn') as HTMLButtonElement)?.click();
+    this.cargarTests();
+  }
+  agregarNuevoLogro(): void {
+    if (!this.nuevoLogro.nombre?.trim()) return;
+    const existe = this.selectedLogros.some(s => s.nombre.toLowerCase() === this.nuevoLogro.nombre.toLowerCase());
+    if (existe) {
+      this.alert.warning('Ya existe un logro con ese nombre.');
+      return;
+    }
+
+    this.selectedLogros.push({
+      nombre: this.nuevoLogro.nombre.trim(),
+      iconoUrl: this.nuevoLogro.iconoUrl?.trim() || ''
+    });
+    this.nuevoLogro = { nombre: '', iconoUrl: '' };
+    this.mostrarFormularioLogro = false;
+  }
+
+  cancelarNuevoLogro(): void {
+    this.nuevoLogro = { nombre: '', iconoUrl: '' };
+    this.mostrarFormularioLogro = false;
   }
 
   quitarLogroSeleccionado(index: number): void {
@@ -200,54 +196,144 @@ export class TestsComponent implements OnInit {
     });
   }
 
+  toggleTestStatus(t: TestItem): void {
+    if (t.isDeleted) {
+      this.alert.confirm(`¿Confirmas activar el test "${t.nombre}"?`).then(confirmed => {
+        if (!confirmed || !t._id) return;
+        
+        const payload = { isDeleted: false };
+        this.testService.update(t._id, payload).subscribe({
+          next: () => {
+            this.cargarTests();
+            this.alert.success('El test se activó correctamente.');
+          },
+          error: () => {
+            this.alert.error('No se pudo activar el test.');
+          }
+        });
+      });
+    } else {
+      this.alert.confirm(
+        `¿Confirmas desactivar el test "${t.nombre}"?`,
+        'Los usuarios dejarán de ver este test hasta que lo actives nuevamente.'
+      ).then(confirmed => {
+        if (!confirmed || !t._id) return;
+        
+        const payload = { isDeleted: true };
+        this.testService.update(t._id, payload).subscribe({
+          next: () => {
+            this.cargarTests();
+            this.alert.success('El test se desactivó correctamente.');
+          },
+          error: () => {
+            this.alert.error('No se pudo desactivar el test.');
+          }
+        });
+      });
+    }
+  }
+
   confirmarEliminarTest(t: TestItem): void {
-    this.alert.confirm('¿Confirmas eliminar este test?').then(confirmed => {
+    this.alert.confirm(
+      `¿Confirmas eliminar PERMANENTEMENTE el test "${t.nombre}"?`,
+      '⚠️ ATENCIÓN: Esta acción NO se puede deshacer. El test será eliminado completamente de la base de datos.',
+      'Sí, eliminar permanentemente',
+      'Cancelar',
+      'error'
+    ).then(confirmed => {
       if (!confirmed || !t._id) return;
       this.testService.delete(t._id).subscribe({
-        next: () => { this.cargarTests(); this.alert.success('El test se eliminó correctamente.'); },
+        next: () => { 
+          this.cargarTests(); 
+          this.alert.success('El test se eliminó permanentemente.'); 
+        },
         error: () => this.alert.error('No se pudo eliminar el test.')
       });
     });
   }
-
-  // Flujo usuario
   abrirResponderTest(t: TestItem): void {
-    // Gatear por TODOs de la categoría del usuario
-    const categoriaId = this.authService.categoriaId;
     const userId = this.authService.id;
     if (!userId) { this.alert.warning('Debes iniciar sesión.'); return; }
 
-    forkJoin({ todos: this.todoService.getAll(), tareas: this.tareasService.getAll({ usuarioId: userId }) }).subscribe({
-      next: ({ todos, tareas }) => {
+    this.userService.getOne(userId).subscribe({
+      next: (user: User) => {
+        if (!user.empresaId || typeof user.empresaId === 'string') {
+
+          this.prepararYMostrarTest(t, userId);
+          return;
+        }
+        const categoriasEmpresa = user.categoriasEmpresa || [];
+        
+        if (categoriasEmpresa.length === 0) {
+          this.prepararYMostrarTest(t, userId);
+          return;
+        }
+        this.validarContenidoPorCategorias(t, userId, categoriasEmpresa);
+      },
+      error: () => {
+        this.alert.error('No se pudo obtener la información del usuario.');
+      }
+    });
+  }
+
+  private validarContenidoPorCategorias(t: TestItem, userId: string, categoriasEmpresa: any[]): void {
+    const categoriaIds = categoriasEmpresa.map(cat => cat._id).filter(id => id);
+
+    forkJoin({
+      videos: this.videoService.getAll(),
+      articulos: this.articuloService.getAll(),
+      tareas: this.tareasService.getAll({ usuarioId: userId })
+    }).subscribe({
+      next: ({ videos, articulos, tareas }) => {
         const completadas = new Set<string>((tareas || []).map((x: any) => String(x?.tareaCompletada || '')));
-        const todosDeCategoria = (todos || []).filter(td => (!categoriaId || String(td.categoriaId || '') === String(categoriaId)));
-        const tienePendientes = todosDeCategoria.some(td => {
-          const todoId = String((td as any)?._id || '');
-          const bases = Array.isArray((td as any)?.tareasBase) ? (td as any).tareasBase : [];
-          return bases.some((_: any, idx: number) => !completadas.has(`custom:${todoId}#${idx}`));
+        const vidsCat = (videos || []).filter((v: any) => {
+          const videoCatId = typeof v.categoriaId === 'object' ? v.categoriaId?._id : v.categoriaId;
+          return categoriaIds.includes(String(videoCatId || ''));
         });
-        if (tienePendientes) {
-          this.alert.info('Debes completar tus tareas asignadas antes de realizar el test.');
+        
+        const artsCat = (articulos || []).filter((a: any) => {
+          const artCatId = typeof a.categoriaId === 'object' ? a.categoriaId?._id : a.categoriaId;
+          return categoriaIds.includes(String(artCatId || ''));
+        });
+
+        const requiredCodes: string[] = [];
+        for (const v of vidsCat) requiredCodes.push(`Video visualizado: ${v.titulo}`);
+        for (const a of artsCat) requiredCodes.push(`Articulo leído: ${a.titulo}`);
+
+        const faltantes = requiredCodes.filter(code => !completadas.has(code));
+        
+        if (faltantes.length > 0) {
+          const nombresTareas = faltantes.map(code => {
+            if (code.startsWith('Video visualizado: ')) {
+              return code.replace('Video visualizado: ', '');
+            }
+            if (code.startsWith('Articulo leído: ')) {
+              return code.replace('Articulo leído: ', '');
+            }
+            return code;
+          });
+          
+          this.alert.info(`Para poder realizar este test debes tener tus tareas completas: ${nombresTareas.join(', ')}`);
           return;
         }
 
-        // Auto-crear una tarea completada al iniciar el test
-        const code = `test:start:${t._id}`;
-        this.tareasService.create({ usuarioId: userId, tareaCompletada: code } as any).subscribe({ next: () => { }, error: () => { } });
-
-        this.testAResponder = t;
-        this.respuestasUsuario = (t.preguntas || []).map(() => '');
-        const modalEl = document.getElementById('modalResponderTest');
-        if (modalEl && typeof window !== 'undefined') {
-          const anyWin = window as any;
-          const modal = anyWin.bootstrap?.Modal?.getOrCreateInstance
-            ? anyWin.bootstrap.Modal.getOrCreateInstance(modalEl)
-            : new anyWin.bootstrap.Modal(modalEl);
-          modal.show();
-        }
+        this.prepararYMostrarTest(t, userId);
       },
-      error: () => this.alert.error('No se pudieron validar tus tareas pendientes.')
+      error: () => this.alert.error('No se pudieron validar los contenidos previos.')
     });
+  }
+
+  private prepararYMostrarTest(t: TestItem, userId: string): void {
+    this.testAResponder = t;
+    this.respuestasUsuario = (t.preguntas || []).map(() => '');
+    const modalEl = document.getElementById('modalResponderTest');
+    if (modalEl && typeof window !== 'undefined') {
+      const anyWin = window as any;
+      const modal = anyWin.bootstrap?.Modal?.getOrCreateInstance
+        ? anyWin.bootstrap.Modal.getOrCreateInstance(modalEl)
+        : new anyWin.bootstrap.Modal(modalEl);
+      modal.show();
+    }
   }
 
   cerrarResponderTest(): void {
@@ -285,8 +371,7 @@ export class TestsComponent implements OnInit {
 
         if (aprobado) {
           this.alert.success(nombresLogros ? `¡Aprobado! Logros obtenidos: ${nombresLogros}` : '¡Aprobado! Sin nuevos logros.');
-          // El backend ya crea la tarea con el nombre del test, evitamos duplicar
-          this.recalcularListasUsuario();
+          this.cargarTests();
         } else {
           this.alert.info('No aprobado. ¡Sigue intentando, puedes lograrlo!');
         }
@@ -298,10 +383,45 @@ export class TestsComponent implements OnInit {
 
   private recalcularListasUsuario(): void {
     const userId = this.authService.id;
-    if (!userId) { this.testsPendientes = [...this.tests]; this.testsRealizados = []; return; }
-    // Marcamos realizados con presencia de logros (proxy) o usando Tareas si se quiere refinar
-    const realizados = new Set<string>((this.tests || []).filter(t => (t?.logros ?? []).length > 0).map(t => String(t._id)));
-    this.testsRealizados = this.tests.filter(t => t._id && realizados.has(String(t._id)));
-    this.testsPendientes = this.tests.filter(t => !(t._id && realizados.has(String(t._id))));
+
+    if (!userId) {
+      this.testsPendientes = [...(this.tests || [])];
+      this.testsRealizados = [];
+      return;
+    }
+
+    this.tareasService.getAll({ usuarioId: userId }).subscribe({
+              next: (tareas) => {
+          const tareasCompletadas = new Set<string>(
+            (tareas || []).map((t: any) => String(t?.tareaCompletada || ''))
+          );
+
+          this.testsPendientes = [];
+          this.testsRealizados = [];
+
+          for (const test of this.tests || []) {
+          const testCompletado = `Test completado: ${test.nombre || 'Sin nombre'}`;
+          const testIntentado = `Test intentado: ${test.nombre || 'Sin nombre'}`;
+          const testNombreDirecto = test.nombre || 'Sin nombre';
+          
+          const encontradoCompletado = tareasCompletadas.has(testCompletado);
+          const encontradoDirecto = tareasCompletadas.has(testNombreDirecto);
+
+          if (encontradoCompletado || encontradoDirecto) {
+            this.testsRealizados.push(test);
+          } else {
+            this.testsPendientes.push(test);
+          }
+        }
+
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        console.error('Error al recalcular listas:', error);
+        this.testsPendientes = [...(this.tests || [])];
+        this.testsRealizados = [];
+      }
+    });
   }
 }
+

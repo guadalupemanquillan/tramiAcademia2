@@ -32,21 +32,13 @@ export class CategoriasComponent {
   }
 
   // --- Helpers usados por Dashboard ---
-  static getLastChangeDate(categories: any[] | null | undefined): string {
-    if (!Array.isArray(categories) || categories.length === 0) return '';
-    for (let i = categories.length - 1; i >= 0; i--) {
-      const c = categories[i] as any;
-      const date = c?.updatedAt || c?.createdAt;
-      if (date) {
-        try { return new Date(date).toLocaleDateString(); } catch { return String(date); }
-      }
-    }
-    return '';
-  }
-
   static getParentCount(categories: any[] | null | undefined): number {
     if (!Array.isArray(categories) || categories.length === 0) return 0;
-    return categories.filter(c => !c?.categoriaPadre).length;
+    // Contar categorías que son padres de otras categorías (tienen subcategorías)
+    return categories.filter(c => {
+      // Una categoría es padre si otras categorías la tienen como categoriaPadre
+      return categories.some(otherCat => otherCat?.categoriaPadre === c?._id);
+    }).length;
   }
 
   cargarCategorias(): void {
@@ -145,7 +137,13 @@ export class CategoriasComponent {
 
   confirmarEliminarCategoria(cat: Categoria): void {
     if (!cat._id) return;
-    this.alert.confirm(`¿Confirmas eliminar la categoría "${cat.nombre}"?`).then(confirmed => {
+    this.alert.confirm(
+      `¿Confirmas eliminar la categoría "${cat.nombre}"?`,
+      'Esta acción no se puede deshacer.',
+      'Sí, eliminar',
+      'Cancelar',
+      'warning'
+    ).then(confirmed => {
       if (!confirmed) return;
       this.categoriaService.delete(cat._id!).subscribe({
         next: () => {

@@ -1,5 +1,7 @@
 const Test = require("../../models/test.model");
 
-exports.getAllTestService = async () => {
-  return await Test.find({ isDeleted: { $ne: true } }).populate("logros");
+exports.getAllTestService = async (role = 'usuario') => {
+  const query = role === 'editor' ? {} : { isDeleted: { $ne: true } };
+  const tests = await Test.find(query).populate("logros");
+  return tests;
 };

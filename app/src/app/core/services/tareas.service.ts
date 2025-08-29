@@ -7,7 +7,7 @@ import { Tarea } from '../models/tareas.model';
 export class TareasService {
   private apiUrl = 'http://localhost:8080/api/tareas';
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   getAll(params?: { usuarioId?: string }): Observable<Tarea[]> {
     let httpParams = new HttpParams();

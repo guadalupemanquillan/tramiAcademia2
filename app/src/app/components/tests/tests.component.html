@@ -13,18 +13,35 @@
             <th>Nombre</th>
             <th>Preguntas</th>
             <th>Logros</th>
+            <th>Estado</th>
             <th class="text-end">Acciones</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let t of tests">
+          <tr *ngFor="let t of tests" [class.table-secondary]="t.isDeleted">
             <td>{{ t.nombre || '—' }}</td>
             <td>{{ t.preguntas.length }}</td>
             <td>{{ t.logros?.length ?? 0 }}</td>
+            <td>
+              <span *ngIf="t.isDeleted" class="badge bg-secondary">Inactivo</span>
+              <span *ngIf="!t.isDeleted" class="badge bg-success">Activo</span>
+            </td>
             <td class="text-end">
-              <button class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal"
-                data-bs-target="#modalEditarTest" (click)="abrirEditarTest(t)">Editar</button>
-              <button class="btn btn-sm btn-outline-danger" (click)="confirmarEliminarTest(t)">Eliminar</button>
+              <div class="d-inline-flex align-items-center gap-2">
+                <button class="btn btn-link text-dark p-0" data-bs-toggle="modal" data-bs-target="#modalEditarTest"
+                  (click)="abrirEditarTest(t)" title="Editar">
+                  <i class="bi bi-pencil-fill"></i>
+                </button>
+                <button class="btn btn-link text-dark p-0" (click)="toggleTestStatus(t)" 
+                  [title]="t.isDeleted ? 'Activar test' : 'Desactivar test'">
+                  <i *ngIf="t.isDeleted" class="bi bi-play-circle-fill text-success"></i>
+                  <i *ngIf="!t.isDeleted" class="bi bi-pause-circle-fill text-warning"></i>
+                </button>
+                <button class="btn btn-link text-danger p-0" (click)="confirmarEliminarTest(t)" 
+                  title="Eliminar permanentemente">
+                  <i class="bi bi-trash3-fill"></i>
+                </button>
+              </div>
             </td>
           </tr>
         </tbody>
@@ -69,9 +86,11 @@
             </div>
             <ul class="list-unstyled mb-0">
               <li *ngFor="let t of tests" class="d-flex justify-content-between align-items-center py-2 border-bottom">
-                <span class="small text-muted">{{ t.preguntas.length }} preguntas</span>
-                <button *ngIf="buttonText" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
-                  data-bs-target="#modalResponderTest" (click)="buttonClick(t)">{{ buttonText }}</button>
+                <div class="d-flex flex-column">
+                  <span class="fw-semibold">{{ t.nombre || 'Test' }}</span>
+                  <span class="small text-muted">{{ t.preguntas.length }} preguntas</span>
+                </div>
+                <button *ngIf="buttonText" class="btn btn-sm btn-outline-primary" (click)="buttonClick(t)">{{ buttonText }}</button>
                 <span *ngIf="!buttonText" class="badge bg-success">Completado</span>
               </li>
             </ul>
@@ -105,7 +124,7 @@
   </div>
 </ng-template>
 <!-- Modal Crear Test -->
-<div class="modal fade" id="modalCrearTest" tabindex="-1" aria-hidden="true" *ngIf="authService.role === 'editor'">
+<div class="modal fade" id="modalCrearTest" tabindex="-1" *ngIf="authService.role === 'editor'">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
@@ -117,33 +136,70 @@
         <div class="row g-3 mb-3">
           <div class="col-12">
             <label class="form-label">Nombre del test</label>
-            <input class="form-control" [(ngModel)]="nuevoTest.nombre" placeholder="Nombre del test" title="Nombre del test">
+            <input class="form-control" [(ngModel)]="nuevoTest.nombre" placeholder="Nombre del test"
+              title="Nombre del test">
           </div>
-          <div class="col-6">
-            <label class="form-label">Asignar logro (opcional)</label>
-            <div class="input-group">
-              <select class="form-select" [(ngModel)]="selectedLogroId">
-                <option [ngValue]="null">Seleccionar...</option>
-                <option *ngFor="let lg of logrosDisponibles" [ngValue]="lg._id">{{ lg.nombre }}</option>
-              </select>
-              <button class="btn btn-outline-primary" type="button" (click)="agregarLogroSeleccionado()">Añadir</button>
+          <div class="col-12">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" [(ngModel)]="nuevoTest.isDeleted" id="testInactivo">
+              <label class="form-check-label" for="testInactivo">
+                Test inactivo (no visible para usuarios)
+              </label>
             </div>
           </div>
-          <div class="col-6">
-            <label class="form-label">Logros seleccionados</label>
-            <ul class="list-group">
-              <li *ngFor="let sl of selectedLogros; let i = index"
-                class="list-group-item d-flex justify-content-between align-items-center">
-                <div class="d-flex align-items-center gap-2">
-                  <img *ngIf="sl.iconoUrl" [src]="sl.iconoUrl" alt="icon" width="20" height="20">
-                  <span>{{ sl.nombre }}</span>
+          <div class="col-12">
+            <label class="form-label">Logros del test (opcional)</label>
+            
+            <!-- Botón para expandir formulario de logro -->
+            <div class="mb-3" *ngIf="!mostrarFormularioLogro">
+              <button type="button" class="btn btn-outline-primary" (click)="mostrarFormularioLogro = true">
+                <i class="bi bi-plus-circle me-2"></i>Agregar logro
+              </button>
+            </div>
+
+            <!-- Formulario expandido para crear logro -->
+            <div class="mb-3" *ngIf="mostrarFormularioLogro">
+              <div class="row g-2 mb-2">
+                <div class="col-5">
+                  <input class="form-control" [(ngModel)]="nuevoLogro.nombre" placeholder="Nombre del logro" 
+                         title="Nombre del logro">
                 </div>
-                <button type="button" class="btn btn-sm btn-outline-danger"
-                  (click)="quitarLogroSeleccionado(i)">Quitar</button>
-              </li>
-              <li *ngIf="selectedLogros.length === 0" class="list-group-item text-muted small">Ninguno</li>
-            </ul>
+                <div class="col-5">
+                  <input class="form-control" [(ngModel)]="nuevoLogro.iconoUrl" placeholder="URL del icono (opcional)" 
+                         title="URL del icono">
+                </div>
+                <div class="col-2">
+                  <div class="d-flex gap-1">
+                                      <button class="btn btn-outline-primary" type="button" (click)="agregarNuevoLogro()" 
+                          [disabled]="!nuevoLogro.nombre.trim()">
+                      <i class="bi bi-check-lg"></i>
+                    </button>
+                    <button class="btn btn-outline-secondary" type="button" (click)="cancelarNuevoLogro()">
+                      <i class="bi bi-x-lg"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Lista de logros agregados -->
+            <div class="col-12">
+              <label class="form-label">Logros agregados</label>
+              <ul class="list-group">
+                <li *ngFor="let sl of selectedLogros; let i = index"
+                  class="list-group-item d-flex justify-content-between align-items-center">
+                  <div class="d-flex align-items-center gap-2">
+                    <img *ngIf="sl.iconoUrl" [src]="sl.iconoUrl" alt="icon" width="20" height="20">
+                    <span>{{ sl.nombre }}</span>
+                  </div>
+                  <button type="button" class="btn btn-sm btn-outline-danger"
+                    (click)="quitarLogroSeleccionado(i)">Quitar</button>
+                </li>
+                <li *ngIf="selectedLogros.length === 0" class="list-group-item text-muted small">Ningún logro agregado</li>
+              </ul>
+            </div>
           </div>
+          
         </div>
         <!-- Editor de preguntas en creación -->
         <ng-container *ngTemplateOutlet="preguntasForm; context:{ test: nuevoTest, edicion: false }"></ng-container>
@@ -160,7 +216,7 @@
   </div>
 </div>
 <!-- Modal Editar Test -->
-<div class="modal fade" id="modalEditarTest" tabindex="-1" aria-hidden="true"
+<div class="modal fade" id="modalEditarTest" tabindex="-1"
   *ngIf="authService.role === 'editor' && testEditar">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
@@ -172,26 +228,39 @@
       <div class="modal-body">
         <div class="mb-3">
           <label class="form-label">Nombre del test</label>
-          <input class="form-control" [(ngModel)]="testEditar!.nombre" placeholder="Nombre del test" title="Nombre del test">
+          <input class="form-control" [(ngModel)]="testEditar!.nombre" placeholder="Nombre del test"
+            title="Nombre del test">
+        </div>
+        <div class="mb-3">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" [(ngModel)]="testEditar!.isDeleted" id="testInactivoEditar">
+            <label class="form-check-label" for="testInactivoEditar">
+              Test inactivo (no visible para usuarios)
+            </label>
+          </div>
         </div>
         <!-- Editor de preguntas en edición -->
-        <div *ngFor="let p of testEditar?.preguntas; let i=index; trackBy: trackPregunta" class="border rounded p-3 mb-3">
+        <div *ngFor="let p of testEditar?.preguntas; let i=index; trackBy: trackPregunta"
+          class="border rounded p-3 mb-3">
           <div class="mb-2 d-flex align-items-start gap-2">
             <div class="flex-grow-1">
               <label class="form-label">Título de la pregunta</label>
               <input class="form-control" [(ngModel)]="p.tituloPregunta" [ngModelOptions]="{updateOn: 'blur'}"
                 placeholder="Título de la pregunta" title="Título de la pregunta">
             </div>
-            <button type="button" class="btn btn-outline-danger mt-4" (click)="eliminarPregunta(i, true)" title="Eliminar pregunta">Eliminar</button>
+            <button type="button" class="btn btn-outline-danger mt-4" (click)="eliminarPregunta(i, true)"
+              title="Eliminar pregunta">Eliminar</button>
           </div>
           <div class="mb-2">
             <label class="form-label">Opciones de respuesta</label>
             <div *ngFor="let o of p.opcionesRespuesta; let j=index; trackBy: trackOpcion" class="input-group mb-1">
               <input class="form-control" [(ngModel)]="p.opcionesRespuesta[j]" [ngModelOptions]="{updateOn: 'blur'}"
                 placeholder="Opción de respuesta" title="Opción de respuesta">
-              <button type="button" class="btn btn-outline-danger" (click)="eliminarOpcion(i, j, true)" title="Eliminar opción">&times;</button>
+              <button type="button" class="btn btn-outline-danger" (click)="eliminarOpcion(i, j, true)"
+                title="Eliminar opción">&times;</button>
             </div>
-            <button type="button" class="btn btn-sm btn-outline-secondary" (click)="agregarOpcion(i, true)">Agregar opción</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" (click)="agregarOpcion(i, true)">Agregar
+              opción</button>
           </div>
           <div class="mb-2">
             <label class="form-label">Respuesta correcta</label>
@@ -212,11 +281,11 @@
   </div>
 </div>
 <!-- Modal Responder Test (usuario) -->
-<div class="modal fade" id="modalResponderTest" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="modalResponderTest" tabindex="-1">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Realizar Test</h5>
+        <h5 class="modal-title">Realizar Test: {{ testAResponder?.nombre || '—' }}</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="responderTestCerrarBtn"
           (click)="cerrarResponderTest()"></button>
       </div>

@@ -23,7 +23,7 @@ const testSchema = new mongoose.Schema({
   ],
   logros: [
     {
-      nombre: String,
+      nombre: String, 
       iconoUrl: String,
     }
   ],

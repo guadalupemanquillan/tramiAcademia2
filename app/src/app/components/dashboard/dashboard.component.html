@@ -10,7 +10,7 @@
               <div>
                 <div class="fw-semibold mb-1">Guía rápida</div>
                 <div class="small">
-                  Primero completá las tareas de tu categoría. 
+                  Primero completá las tareas de tu categoría.
                   Al terminar,podras realizar el test para que puedas sumar logros.
                 </div>
                 <a class="btn btn-brand btn-sm mt-2" [routerLink]="'/usuario/todo'">Ver mis tareas</a>
@@ -34,44 +34,96 @@
                         <span class="fw-semibold">Nombre: </span>{{ cu.nombreCompleto || cu.nombre || '—' }}
                       </div>
                       <div class="bg-light border rounded-3 px-3 py-2 mb-2">
-                        <span class="fw-semibold">Tus logros: </span>
-                        <ng-container *ngIf="(logros$ | async) as allL; else noUL">{{
-                          logrosHelper.getUserLogrosCount(cu, allL) }}</ng-container>
-                        <ng-template #noUL>0</ng-template>
+                        <span class="fw-semibold">Rol: </span>{{ cu.roles || '—' }}
                       </div>
                       <div class="bg-light border rounded-3 px-3 py-2">
-                        <span class="fw-semibold">Rol: </span>{{ cu.roles || '—' }}
+                        <span class="fw-semibold">Empresa: </span>
+                        {{ getEmpresaNombre(cu) }}
+                      </div>
+                      <div class="mt-3">
+                        <div class="card shadow-sm tile-hover dashboard-card">
+                          <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                              <span class="fw-semibold"><i class="bi bi-trophy-fill me-2"></i>Tus logros</span>
+                              <span class="mb-0">
+                                <ng-container *ngIf="(logros$ | async) as allL; else noUL">
+                                  {{ logrosHelper.getUserLogrosCount(cu, allL) }}
+                                </ng-container>
+                                <ng-template #noUL>0</ng-template>
+                              </span>
+                            </div>
+                            <div class="small text-muted mb-2">
+                              <ng-container *ngIf="(logros$ | async) as allL; else noLogrosMsg">
+                                <ng-container *ngIf="logrosHelper.getUserLogrosCount(cu, allL) > 0; else sinLogrosMsg">
+                                  ¡Felicidades! Hasta el momento tienes {{ logrosHelper.getUserLogrosCount(cu, allL) }} logro{{ logrosHelper.getUserLogrosCount(cu, allL) !== 1 ? 's' : '' }}, ¡continúa así!
+                                </ng-container>
+                                <ng-template #sinLogrosMsg>
+                                  ¡Vamos a obtener esos logros! ¡Tú puedes!
+                                </ng-template>
+                              </ng-container>
+                              <ng-template #noLogrosMsg>
+                                ¡Vamos a obtener esos logros! ¡Tú puedes!
+                              </ng-template>
+                            </div>
+                            <div class="mt-auto pt-2 d-flex justify-content-end">
+                              <a routerLink="/logros" class="link-primary text-decoration-none small d-inline-flex align-items-center">
+                                Ver tus logros <i class="bi bi-chevron-right ms-1"></i>
+                              </a>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                     <!-- Col derecha: KPIs usuario (subidos aquí) -->
                     <div class="col-12 col-lg-6">
                       <div class="row g-3">
                         <div class="col-12">
-                          <div class="card shadow-sm">
+                          <div class="card shadow-sm tile-hover dashboard-card">
                             <div class="card-body">
                               <div class="d-flex justify-content-between align-items-center mb-2">
                                 <span class="fw-semibold"><i class="bi bi-clipboard-check me-2"></i>Tests
                                   aprobados</span>
-                                <span class="mb-0">{{ testsHelper.getCompletedPercent((tests$ | async) || []) |
-                                  number:'1.0-0' }}%</span>
+                                <span class="mb-0">{{ testsHelper.getCompletedCount((tests$ | async) || []) }}</span>
                               </div>
-                              <div class="progress progress-thin">
-                                <div class="progress-bar bg-success"
-                                  [style.width.%]="testsHelper.getCompletedPercent((tests$ | async) || [])"></div>
+                              <div class="small text-muted mb-2">
+                                Hasta el momento has aprobado {{ testsHelper.getCompletedCount((tests$ | async) || []) }} test{{ (testsHelper.getCompletedCount((tests$ | async) || []) !== 1) ? 's' : '' }}
+                              </div>
+                              <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="fw-semibold"><i class="bi bi-clock-history me-2"></i>Tests pendientes</span>
+                                <span class="mb-0">{{ (testsPendientesCount$ | async) ?? 0 }}</span>
+                              </div>
+                              <div class="small text-muted">
+                                Te faltan {{ (testsPendientesCount$ | async) ?? 0 }} test{{ ((testsPendientesCount$ | async) ?? 0) !== 1 ? 's' : '' }} por realizar
+                              </div>
+                              <div class="mt-auto pt-2 d-flex justify-content-end">
+                                <a routerLink="/tests" class="link-primary text-decoration-none small d-inline-flex align-items-center">
+                                  Ir a Tests <i class="bi bi-chevron-right ms-1"></i>
+                                </a>
                               </div>
                             </div>
                           </div>
                         </div>
                         <div class="col-12">
-                          <div class="card shadow-sm">
+                          <div class="card shadow-sm tile-hover dashboard-card">
                             <div class="card-body">
                               <div class="d-flex justify-content-between align-items-center mb-2">
                                 <span class="fw-semibold"><i class="bi bi-list-check me-2"></i>Tareas completadas</span>
-                                <span class="mb-0">{{ (tareasCompletadasPct$ | async) ?? 0 | number:'1.0-0' }}%</span>
+                                <span class="mb-0">{{ (tareasCompletadasCount$ | async) ?? 0 }}</span>
                               </div>
-                              <div class="progress progress-thin">
-                                <div class="progress-bar bg-primary"
-                                  [style.width.%]="(tareasCompletadasPct$ | async) ?? 0"></div>
+                              <div class="small text-muted mb-2">
+                                Hasta el momento tienes {{ (tareasCompletadasCount$ | async) ?? 0 }} tarea{{ ((tareasCompletadasCount$ | async) ?? 0) !== 1 ? 's' : '' }} completada{{ ((tareasCompletadasCount$ | async) ?? 0) !== 1 ? 's' : '' }}
+                              </div>
+                              <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="fw-semibold"><i class="bi bi-clock-history me-2"></i>Tareas pendientes</span>
+                                <span class="mb-0">{{ (tareasPendientesCount$ | async) ?? 0 }}</span>
+                              </div>
+                              <div class="small text-muted">
+                                Te faltan {{ (tareasPendientesCount$ | async) ?? 0 }} tarea{{ ((tareasPendientesCount$ | async) ?? 0) !== 1 ? 's' : '' }} por completar
+                              </div>
+                              <div class="mt-auto pt-2 d-flex justify-content-end">
+                                <a routerLink="/tareas" class="link-primary text-decoration-none small d-inline-flex align-items-center">
+                                  Ir a Tareas <i class="bi bi-chevron-right ms-1"></i>
+                                </a>
                               </div>
                             </div>
                           </div>
@@ -87,14 +139,14 @@
             </div>
           </div>
         </div>
-      <div class="row g-3 mb-3">
+        <div class="row g-3 mb-3">
           <div *ngFor="let tile of tiles"
-            [class]="tile.title === 'Tests' ? 'col-12 col-md-12 col-lg-8 col-xl-6' : 'col-12 col-md-6 col-lg-4 col-xl-3'">
-            <div class="card shadow-sm rounded-1 tile-hover dashboard-card">
+            [class]="tile.title === 'Tests' ? 'col-12 col-md-6 col-lg-6 col-xl-4' : 'col-12 col-md-6 col-lg-6 col-xl-4'">
+            <div class="card shadow-sm rounded-1 tile-hover dashboard-card h-100">
               <div class="card-header bg-primary-subtle text-primary-emphasis py-2 px-3">
                 <div class="fw-semibold">{{ tile.title }}</div>
               </div>
-              <div class="card-body p-2">
+              <div class="card-body p-3 d-flex flex-column">
                 <div [ngSwitch]="tile.title">
                   <!-- Video -->
                   <ng-container *ngSwitchCase="'Video'">
@@ -137,9 +189,9 @@
                           <ng-template #noTests>0</ng-template>
                         </div>
                         <div class="bg-light border rounded-3 px-3 py-2 mb-2">
-                          <span class="fw-semibold">Porcentaje de test aprobados: </span>
+                          <span class="fw-semibold">Tests activos: </span>
                           <ng-container *ngIf="(tile.obs | async) as t2; else noQ">
-                            {{ testsHelper.getCompletedPercent(t2) }}
+                            {{ getTestsActivosCount(t2) }}
                           </ng-container>
                           <ng-template #noQ>0</ng-template>
                         </div>
@@ -204,14 +256,7 @@
                           <ng-template #noParent>0</ng-template>
                         </div>
                       </div>
-                      <div class="col-12">
-                        <div class="bg-light border rounded-3 px-3 py-2">
-                          <span class="fw-semibold">Última modificación: </span>
-                          <ng-container *ngIf="(tile.obs | async) as c3; else noDate"> {{
-                            categoriasHelper.getLastChangeDate(c3) || '—' }} </ng-container>
-                          <ng-template #noDate>—</ng-template>
-                        </div>
-                      </div>
+
                     </div>
                   </ng-container>
                   <!-- Logros -->
@@ -235,22 +280,7 @@
                           <ng-template #noUL>0</ng-template>
                         </div>
                       </div>
-                      <div class="col-12" *ngIf="isEditorFlag">
-                        <div class="bg-light border rounded-3 px-3 py-2 d-flex justify-content-between">
-                          <div>
-                            <span class="fw-semibold">Activos: </span>
-                            <ng-container *ngIf="(tile.obs | async) as l1; else noAct"> {{
-                              logrosHelper.countActiveLogros(l1) }} </ng-container>
-                            <ng-template #noAct>0</ng-template>
-                          </div>
-                          <div>
-                            <span class="fw-semibold">Inactivos: </span>
-                            <ng-container *ngIf="(tile.obs | async) as l2; else noInact"> {{
-                              logrosHelper.countInactiveLogros(l2) }} </ng-container>
-                            <ng-template #noInact>0</ng-template>
-                          </div>
-                        </div>
-                      </div>
+
                       <div class="col-12" *ngIf="isEditorFlag">
                         <div class="bg-light border rounded-3 px-3 py-2">
                           <span class="fw-semibold">Último logro entregado: </span>
@@ -274,9 +304,50 @@
                       </div>
                     </div>
                   </ng-container>
-     <!-- Default: lista simple para otros tiles excepto Tests -->
+                  <!-- Tareas -->
+                  <ng-container *ngSwitchCase="'Tareas'">
+                    <div class="row g-2 mb-2">
+                      <div class="col-12" *ngIf="isEditorFlag">
+                        <div class="bg-light border rounded-3 px-3 py-2">
+                          <span class="fw-semibold">Total tareas realizadas: </span>
+                          <ng-container *ngIf="(tile.obs | async) as t1; else noTareas">
+                            {{ tareasHelper.getTotalTareas(t1) }}
+                          </ng-container>
+                          <ng-template #noTareas>0</ng-template>
+                        </div>
+                      </div>
+                      <div class="col-12" *ngIf="isEditorFlag">
+                        <div class="bg-light border rounded-3 px-3 py-2">
+                          <span class="fw-semibold">Usuarios que realizaron tareas: </span>
+                          <ng-container *ngIf="(tile.obs | async) as t2; else noUsuariosTareas">
+                            {{ tareasHelper.getUsuariosConTareas(t2) }}
+                          </ng-container>
+                          <ng-template #noUsuariosTareas>0</ng-template>
+                        </div>
+                      </div>
+                      <div class="col-12" *ngIf="!isEditorFlag">
+                        <div class="bg-light border rounded-3 px-3 py-2">
+                          <span class="fw-semibold">Tus tareas completadas: </span>
+                          <ng-container *ngIf="(tareasCompletadasCount$ | async) as count; else noTareasCompletadas">
+                            {{ count }}
+                          </ng-container>
+                          <ng-template #noTareasCompletadas>0</ng-template>
+                        </div>
+                      </div>
+                      <div class="col-12" *ngIf="!isEditorFlag">
+                        <div class="bg-light border rounded-3 px-3 py-2">
+                          <span class="fw-semibold">Tareas pendientes: </span>
+                          <ng-container *ngIf="(tareasPendientesCount$ | async) as count; else noTareasPendientes">
+                            {{ count }}
+                          </ng-container>
+                          <ng-template #noTareasPendientes>0</ng-template>
+                        </div>
+                      </div>
+                    </div>
+                  </ng-container>
+                  <!-- Default: lista simple para otros tiles excepto Tests y Tareas -->
                   <ng-container *ngSwitchDefault>
-                    <ng-container *ngIf="tile.title !== 'Tests'">
+                    <ng-container *ngIf="tile.title !== 'Tests' && tile.title !== 'Tareas'">
                       <ul class="list-unstyled small mb-2">
                         <li *ngFor="let item of (tile.obs | async) | slice:0:3; trackBy: idx"
                           class="d-flex justify-content-between">
@@ -289,7 +360,7 @@
                     </ng-container>
                   </ng-container>
                 </div>
-                <div class="mt-2 d-flex justify-content-end">
+                <div class="mt-auto pt-2 d-flex justify-content-end">
                   <a *ngIf="tile.link" [routerLink]="tile.link"
                     class="link-primary text-decoration-none small d-inline-flex align-items-center">
                     Ir a {{ tile.title }} <i class="bi bi-chevron-right ms-1"></i>

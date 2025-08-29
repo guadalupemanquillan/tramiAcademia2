@@ -9,6 +9,8 @@ import { AuthService } from '../../core/services/auth.service';
 import { Categoria } from '../../core/models/categoria.model';
 import { CategoriaService } from '../../core/services/categoria.service';
 import { TareasService } from '../../core/services/tareas.service';
+import { UserService } from '../../core/services/user.service';
+import { User } from '../../core/models/user.model';
 
 @Component({
   selector: 'app-video',
@@ -27,17 +29,28 @@ export class VideoComponent implements OnInit {
   private lastAllowedTime = 0;
   private endedVideos = new Set<string>();
 
-  constructor(private videoService: VideoService, private cdr: ChangeDetectorRef, private alert: AlertService, public authService: AuthService, private categoriaService: CategoriaService, private tareas: TareasService) { }
+  constructor(private videoService: VideoService, private cdr: ChangeDetectorRef, private alert: AlertService, public authService: AuthService, private categoriaService: CategoriaService, private tareas: TareasService, private userService: UserService) { }
 
   ngOnInit(): void {
     this.cargarVideos();
     this.cargarCategorias();
+    this.cargarTareasExistentes();
   }
 
   cargarVideos(): void {
     this.loading = true;
     this.videoService.getAll().subscribe({
-      next: data => { this.videos = data; this.loading = false; this.cdr.detectChanges(); },
+      next: data => {
+        if (this.authService.role === 'editor') {
+          // Los editores ven todos los videos
+          this.videos = data;
+          this.loading = false;
+          this.cdr.detectChanges();
+        } else {
+          // Los usuarios solo ven videos de sus categorías de empresa
+          this.filtrarVideosPorEmpresa(data);
+        }
+      },
       error: () => { this.loading = false; }
     });
   }
@@ -55,9 +68,18 @@ export class VideoComponent implements OnInit {
       return;
     }
     this.videoService.create(this.nuevoVideo).subscribe({
-      next: () => { this.nuevoVideo = { urlYouTube: '', titulo: '', categoriaId: null }; this.cargarVideos(); this.alert.success('Video creado.'); },
+      next: () => {
+        this.resetearFormularioVideo();
+        this.alert.successWithAutoClose('Video creado correctamente.');
+      },
       error: () => this.alert.error('No se pudo crear el video.')
     });
+  }
+
+  private resetearFormularioVideo(): void {
+    this.nuevoVideo = { urlYouTube: '', titulo: '', categoriaId: null };
+    (document.getElementById('crearVideoCerrarBtn') as HTMLButtonElement)?.click();
+    this.cargarVideos();
   }
 
   abrirEditar(v: VideoItem): void {
@@ -68,16 +90,22 @@ export class VideoComponent implements OnInit {
     if (!this.videoEditar || !this.videoEditar._id) return;
     const { _id, ...rest } = this.videoEditar as VideoItem;
     this.videoService.update(_id!, rest).subscribe({
-      next: () => { this.cargarVideos(); this.alert.success('Video actualizado.'); },
+      next: () => { this.cargarVideos(); },
       error: () => this.alert.error('No se pudo actualizar el video.')
     });
   }
 
   confirmarEliminar(v: VideoItem): void {
-    this.alert.confirm(`¿Eliminar video "${v.titulo}"?`).then(ok => {
+    this.alert.confirm(
+      `¿Eliminar video "${v.titulo}"?`,
+      'Esta acción no se puede deshacer.',
+      'Sí, eliminar',
+      'Cancelar',
+      'warning'
+    ).then(ok => {
       if (!ok || !v._id) return;
       this.videoService.delete(v._id).subscribe({
-        next: () => { this.cargarVideos(); this.alert.success('Video eliminado.'); },
+        next: () => { this.cargarVideos(); },
         error: () => this.alert.error('No se pudo eliminar el video.')
       });
     });
@@ -126,7 +154,7 @@ export class VideoComponent implements OnInit {
     const self = this;
     this.lastAllowedTime = 0;
     if (this.ytPlayer && typeof this.ytPlayer.destroy === 'function') {
-      try { this.ytPlayer.destroy(); } catch {}
+      try { this.ytPlayer.destroy(); } catch { }
       this.ytPlayer = null;
     }
     const anyWin = window as any;
@@ -178,13 +206,119 @@ export class VideoComponent implements OnInit {
     return !!(id && this.endedVideos.has(String(id)));
   }
 
+  // Verificar si el video ya fue marcado como visto
+  isVideoAlreadyWatched(v: VideoItem): boolean {
+    const userId = this.authService.id;
+    if (!userId) return false;
+    
+    // Buscar en las tareas existentes si ya existe una tarea para este video
+    const videoTaskName = `Video visualizado: ${v.titulo}`;
+    return this.existingVideoTasks.has(videoTaskName);
+  }
+
+  // Set para almacenar las tareas de video ya completadas
+  private existingVideoTasks = new Set<string>();
+
+  // Cargar las tareas existentes del usuario
+  private cargarTareasExistentes(): void {
+    const userId = this.authService.id;
+    if (!userId) return;
+
+    this.tareas.getAll({ usuarioId: userId }).subscribe({
+      next: (tareas) => {
+        this.existingVideoTasks.clear();
+        (tareas || []).forEach((tarea: any) => {
+          if (tarea.tareaCompletada && tarea.tareaCompletada.startsWith('Video visualizado:')) {
+            this.existingVideoTasks.add(tarea.tareaCompletada);
+          }
+        });
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        // Silenciar error, no es crítico
+      }
+    });
+  }
+
   marcarVideoVisto(v: VideoItem): void {
     const userId = this.authService.id;
-    if (!userId) { this.alert.warning('Debes iniciar sesión.'); return; }
+    if (!userId) { 
+      this.alert.warning('Debes iniciar sesión.'); 
+      return; 
+    }
+
+    // Verificar si ya fue marcado como visto
+    if (this.isVideoAlreadyWatched(v)) {
+      this.alert.info('Ya has marcado este video como visto anteriormente.');
+      return;
+    }
+
     const nombre = `Video visualizado: ${v.titulo}`;
     this.tareas.create({ usuarioId: userId, tareaCompletada: nombre } as any).subscribe({
-      next: () => this.alert.success('Marcado como visto.'),
+      next: () => {
+        // Agregar a la lista local para evitar duplicados
+        this.existingVideoTasks.add(nombre);
+        this.cdr.detectChanges();
+      },
       error: () => this.alert.error('No se pudo registrar la visualización.')
+    });
+  }
+
+  private filtrarVideosPorEmpresa(videos: VideoItem[]): void {
+    const userId = this.authService.id;
+    if (!userId) {
+      this.videos = [];
+      this.loading = false;
+      return;
+    }
+
+    this.userService.getOne(userId).subscribe({
+      next: (user: User) => {
+        if (!user?.empresaId || typeof user.empresaId === 'string') {
+          // Si no tiene empresa, no puede ver videos
+          this.videos = [];
+          this.loading = false;
+          this.alert.info('No tienes empresa asignada. Contacta al administrador.');
+          this.cdr.detectChanges();
+          return;
+        }
+
+        const categoriasEmpresa = user.categoriasEmpresa || [];
+        if (categoriasEmpresa.length === 0) {
+          // Si la empresa no tiene categorías, no puede ver videos
+          this.videos = [];
+          this.loading = false;
+          this.alert.info('Tu empresa no tiene categorías asignadas. Contacta al administrador.');
+          this.cdr.detectChanges();
+          return;
+        }
+
+        // Obtener IDs de las categorías de la empresa
+        const categoriaIds = categoriasEmpresa.map(cat => cat._id).filter(id => id);
+
+        // Filtrar videos que pertenecen a las categorías de la empresa
+        this.videos = videos.filter(video => {
+          if (!video.categoriaId) return false;
+          
+          let videoCatId: string;
+          if (typeof video.categoriaId === 'object' && video.categoriaId !== null) {
+            videoCatId = (video.categoriaId as any)._id || video.categoriaId;
+          } else {
+            videoCatId = video.categoriaId as string;
+          }
+          
+          return categoriaIds.includes(String(videoCatId || ''));
+        });
+
+        this.loading = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.videos = [];
+        this.loading = false;
+        this.alert.error('No se pudo obtener la información del usuario.');
+        this.cdr.detectChanges();
+      }
     });
   }
 }

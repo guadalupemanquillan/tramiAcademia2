@@ -8,8 +8,8 @@ const tareasSchema = new mongoose.Schema(
       required: true,
     },
     tareaCompletada: {
-      type: String
-    }
+      type: String,
+    },
   },
   {
     timestamps: true,

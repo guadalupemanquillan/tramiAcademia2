@@ -3,6 +3,7 @@ const express = require("express");
 const testRouter = express.Router();
 
 const { authorizeRoles } = require("../middlewares/roles.middleware");
+const { auth } = require("../middlewares/auth.middleware");
 const { createNewTestController } = require("../controllers/test/createNewTest.controller");
 
 const {
@@ -34,18 +35,18 @@ const {
 } = require("../controllers/test/completeTest.controller");
 
 // POST
-testRouter.post("/", authorizeRoles('editor'), createNewTestController);
+testRouter.post("/", auth, authorizeRoles('editor'), createNewTestController);
 testRouter.post("/verificarTest/:userId/:testId",verificarTestController)
 // Disponibilidad del test para un usuario
 testRouter.get("/:testId/disponible", checkTestDisponibilidadController);
 // Completar test (aprobado/logros/tarea)
 testRouter.post("/complete/:userId/:testId", completeTestController);
 // DELETE
-testRouter.delete("/:id", authorizeRoles('editor'), deleteOneTestController);
+testRouter.delete("/:id", auth, authorizeRoles('editor'), deleteOneTestController);
 // GET
-testRouter.get("/", getAllTestController);
+testRouter.get("/", auth, getAllTestController);
 testRouter.get("/:id", getOneTestController);
 // PUT
-testRouter.put("/:id", authorizeRoles('editor'), putOneTestController);
+testRouter.put("/:id", auth, authorizeRoles('editor'), putOneTestController);
 
 module.exports = testRouter;

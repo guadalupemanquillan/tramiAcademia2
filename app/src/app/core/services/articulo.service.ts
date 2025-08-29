@@ -7,7 +7,7 @@ import { Articulo } from '../models/articulo.model';
 export class ArticuloService {
   private apiUrl = 'http://localhost:8080/api/articulo';
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   getAll(): Observable<Articulo[]> {
     return this.http.get<Articulo[]>(`${this.apiUrl}/`);
