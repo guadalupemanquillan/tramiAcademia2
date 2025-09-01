@@ -12,7 +12,6 @@
       </select>
       <label class="form-label mb-0" for="filtroCatVideo">Filtrar por categoría</label>
     </div>
-
     <div *ngIf="videosFiltrados.length > 0; else vacio" class="table-responsive">
       <table class="table table-striped table-hover align-middle">
         <thead class="bg-primary text-white">
@@ -49,17 +48,11 @@
                   <button class="btn btn-link text-dark p-0" type="button" (click)="abrirPlayer(v)" title="Ver">
                     <i class="bi bi-eye-fill"></i>
                   </button>
-                  <!-- Botón para marcar como visto -->
-                  <button *ngIf="!isVideoAlreadyWatched(v)" 
-                    class="btn btn-sm btn-success" 
-                    type="button" 
-                    [disabled]="!isVideoEnded(v)"
-                    (click)="marcarVideoVisto(v)">
+                  <button *ngIf="!isVideoAlreadyWatched(v)" class="btn btn-sm btn-success" type="button"
+                    [disabled]="!isVideoEnded(v)" (click)="marcarVideoVisto(v)">
                     Marcar visto
                   </button>
-                  <!-- Indicador de ya visto -->
-                  <span *ngIf="isVideoAlreadyWatched(v)" 
-                    class="badge bg-secondary d-flex align-items-center gap-1">
+                  <span *ngIf="isVideoAlreadyWatched(v)" class="badge bg-secondary d-flex align-items-center gap-1">
                     <i class="bi bi-check-circle-fill"></i>
                     Ya visto
                   </span>
@@ -75,8 +68,6 @@
     </ng-template>
   </div>
 </div>
-
-<!-- Modal Crear Video -->
 <div class="modal fade" id="modalCrearVideo" tabindex="-1" *ngIf="authService.role === 'editor'">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -103,14 +94,13 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="crearVideoCerrarBtn">Cancelar</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+          id="crearVideoCerrarBtn">Cancelar</button>
         <button type="button" class="btn btn-primary" (click)="crearVideo()">Crear</button>
       </div>
     </div>
   </div>
 </div>
-
-<!-- Modal Ver Video (usuario) -->
 <div class="modal fade" id="modalVerVideoUsuario" tabindex="-1">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
@@ -129,9 +119,7 @@
       </div>
     </div>
   </div>
-
 </div>
-<!-- Modal Editar Video -->
 <div class="modal fade" id="modalEditarVideo" tabindex="-1" *ngIf="authService.role === 'editor'">
   <div class="modal-dialog">
     <div class="modal-content" *ngIf="videoEditar as v">

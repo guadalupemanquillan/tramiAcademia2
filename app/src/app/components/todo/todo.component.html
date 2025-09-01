@@ -7,7 +7,6 @@
     </button>
   </div>
   <div class="card-body">
-
     <div class="d-flex align-items-center flex-wrap gap-2 mb-3">
       <select id="categoriaSelect" class="form-select form-select-lg w-auto me-2" [(ngModel)]="categoriaSeleccionada"
         aria-label="Filtro de categoría">
@@ -16,7 +15,6 @@
       </select>
       <label class="form-label mb-0" for="categoriaSelect">Filtrar tareas por categoría</label>
     </div>
-
     <div class="row g-3">
       <div *ngFor="let t of todosActivos; trackBy: trackTodo" class="col-12 col-md-6 col-xl-4">
         <div class="card h-100 shadow-sm" [class.border-success]="authService.role !== 'editor' && isTodoCompletado(t)">
@@ -29,7 +27,7 @@
                   {{ t.activo ? 'Activo' : 'Inactivo' }}
                 </span>
               </ng-container>
-                              <ng-container *ngIf="authService.role !== 'editor' && isTodoCompletado(t)">
+              <ng-container *ngIf="authService.role !== 'editor' && isTodoCompletado(t)">
                 <span class="badge bg-success ms-2">
                   <i class="bi bi-check-circle-fill me-1"></i>Completado
                 </span>
@@ -55,13 +53,12 @@
               <ng-container *ngIf="authService.role !== 'editor'">
                 <li *ngFor="let tb of (t.tareasBase || [])" class="mb-2 d-flex align-items-center">
                   <span class="me-2">
-                    <i *ngIf="isTareaCompletadaPorCategoria(tb.nombreTarea, t)" 
-                       class="bi bi-check-circle-fill text-success"></i>
-                    <i *ngIf="!isTareaCompletadaPorCategoria(tb.nombreTarea, t)" 
-                       class="bi bi-circle text-muted"></i>
+                    <i *ngIf="isTareaCompletadaPorCategoria(tb.nombreTarea, t)"
+                      class="bi bi-check-circle-fill text-success"></i>
+                    <i *ngIf="!isTareaCompletadaPorCategoria(tb.nombreTarea, t)" class="bi bi-circle text-muted"></i>
                   </span>
                   <span [class.text-decoration-line-through]="isTareaCompletadaPorCategoria(tb.nombreTarea, t)"
-                        [class.text-muted]="isTareaCompletadaPorCategoria(tb.nombreTarea, t)">
+                    [class.text-muted]="isTareaCompletadaPorCategoria(tb.nombreTarea, t)">
                     {{ tb.nombreTarea }}
                   </span>
                 </li>
@@ -73,8 +70,6 @@
     </div>
   </div>
 </div>
-
-<!-- Modal Crear Todo -->
 <div class="modal fade" id="modalCrearTodo" tabindex="-1" *ngIf="authService.role === 'editor'">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -83,13 +78,11 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        <!-- Mensaje cuando no hay contenido disponible -->
         <div *ngIf="!hayContenidoDisponible()" class="alert alert-warning mb-3">
           <i class="bi bi-exclamation-triangle-fill me-2"></i>
           <strong>No hay contenido disponible</strong><br>
           Para crear tareas del Todo, primero debes cargar al menos un video o un artículo.
         </div>
-
         <div class="mb-3">
           <label class="form-label">Título</label>
           <input class="form-control" [(ngModel)]="nuevoTodo.titulo">
@@ -101,7 +94,8 @@
         </div>
         <div class="mb-3">
           <label class="form-label">Categoría *</label>
-          <select class="form-select" [(ngModel)]="nuevoTodo.categoriaId" (change)="filtrarContenidoPorCategoria()" required>
+          <select class="form-select" [(ngModel)]="nuevoTodo.categoriaId" (change)="filtrarContenidoPorCategoria()"
+            required>
             <option [ngValue]="null" disabled selected>Selecciona una categoría</option>
             <option *ngFor="let c of categorias" [ngValue]="c._id">{{ c.nombre }}</option>
           </select>
@@ -127,7 +121,6 @@
             </li>
           </ul>
         </div>
-
         <div class="mb-3">
           <label class="form-label">Artículos a leer</label>
           <select class="form-select mb-2" [(ngModel)]="articuloSeleccionado" (change)="agregarArticuloSeleccionado()"
@@ -149,12 +142,10 @@
             </li>
           </ul>
         </div>
-
-
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="button" class="btn btn-primary" (click)="crearTodo()" 
+        <button type="button" class="btn btn-primary" (click)="crearTodo()"
           [disabled]="!hayContenidoDisponible() || !nuevoTodo.titulo">
           Crear
         </button>
@@ -162,8 +153,6 @@
     </div>
   </div>
 </div>
-
-<!-- Modal Editar Todo -->
 <div class="modal fade" id="modalEditarTodo" tabindex="-1" *ngIf="authService.role === 'editor'">
   <div class="modal-dialog">
     <div class="modal-content" *ngIf="todoEditar as t">

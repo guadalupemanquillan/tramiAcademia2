@@ -21,8 +21,6 @@ export class LogrosComponent implements OnInit {
   loading: boolean = true;
   users: User[] = [];
   usuariosLogros: any[] = [];
-  
-
 
   constructor(
     private logrosService: LogrosService,
@@ -38,8 +36,6 @@ export class LogrosComponent implements OnInit {
       this.cargarUsuarios();
     }
   }
-
-  // --- Helpers usados por Dashboard ---
   static getUserLogrosCount(user: any | null | undefined, allLogros: any[] | null | undefined): number {
     if (user && Array.isArray(user.logros)) return user.logros.length;
     if (!user || !Array.isArray(allLogros)) return 0;
@@ -90,15 +86,29 @@ export class LogrosComponent implements OnInit {
     if (role === 'usuario' && this.authService.id) {
       this.logrosService.getAll().subscribe((logros: Logros[]) => {
         const uid = String(this.authService.id);
-        this.logros = (logros || []).filter(l => {
-          const logroUserId = typeof l.usuarioId === 'string' 
-            ? l.usuarioId 
+        let userLogros = (logros || []).filter(l => {
+          const logroUserId = typeof l.usuarioId === 'string'
+            ? l.usuarioId
             : (l.usuarioId as any)?._id;
-          
-          return String(logroUserId || '') === uid || 
-                 (Array.isArray((this as any)?.authService?.logros) && 
-                  (this as any).authService.logros.includes(String((l as any)?._id || '')));
+
+          const matches = String(logroUserId || '') === uid;
+
+          return matches;
         });
+
+        if (userLogros.length === 0) {
+
+          userLogros = (logros || []).filter(l => {
+            const logroUserId = typeof l.usuarioId === 'string'
+              ? l.usuarioId
+              : (l.usuarioId as any)?._id;
+
+            const isAvailable = !logroUserId || logroUserId === '';
+
+            return isAvailable;
+          });
+        }
+        this.logros = userLogros;
         this.loading = false;
         this.cdr.detectChanges();
       });
@@ -114,11 +124,11 @@ export class LogrosComponent implements OnInit {
 
   organizarLogrosPorUsuario(): void {
     const logrosPorUsuario = new Map<string, any>();
-    
+
     this.logros.forEach(logro => {
       let usuarioId = '';
       let nombreUsuario = 'Usuario';
-      
+
       if (typeof logro.usuarioId === 'string') {
         usuarioId = logro.usuarioId;
         const user = this.users.find(u => u._id === usuarioId);
@@ -127,7 +137,7 @@ export class LogrosComponent implements OnInit {
         usuarioId = (logro.usuarioId as any)._id || '';
         nombreUsuario = (logro.usuarioId as any).nombreCompleto || (logro.usuarioId as any).nombre || 'Usuario';
       }
-      
+
       if (!logrosPorUsuario.has(usuarioId)) {
         logrosPorUsuario.set(usuarioId, {
           usuarioId: usuarioId,
@@ -137,12 +147,12 @@ export class LogrosComponent implements OnInit {
           expanded: false
         });
       }
-      
+
       const usuario = logrosPorUsuario.get(usuarioId);
       usuario.logros.push(logro);
       usuario.totalLogros++;
     });
-    
+
     this.usuariosLogros = Array.from(logrosPorUsuario.values());
   }
 
@@ -155,7 +165,7 @@ export class LogrosComponent implements OnInit {
       this.logroEditar = { ...x };
     });
   }
-  
+
   guardarEdicionLogro(): void {
     if (!this.logroEditar || !this.logroEditar._id) return;
     const { _id, ...rest } = this.logroEditar as Logros;
@@ -170,7 +180,7 @@ export class LogrosComponent implements OnInit {
       }
     });
   }
-  
+
   confirmarEliminarLogro(lg: Logros): void {
     this.alert.confirm(
       `¿Confirmas eliminar el logro "${lg.nombre}"?`,

@@ -19,6 +19,12 @@ exports.createNewUserService = async (req) => {
     throw err;
   }
 
+  if (!empresaId) {
+    const err = new Error("La empresa es requerida");
+    err.statusCode = 400;
+    throw err;
+  }
+
   // Verificación de duplicados solo cuando el campo relevante está presente
   if (nombreTrim) {
     const existingByNombre = await User.findOne({ nombre: nombreTrim });
@@ -43,7 +49,7 @@ exports.createNewUserService = async (req) => {
     nombre: nombreTrim || undefined,
     nombreCompleto: nombreCompletoTrim || undefined,
     roles: roles === 'editor' ? 'editor' : 'usuario',
-    empresaId: empresaId || undefined,
+    empresaId: empresaId,
     password: encryptedPassword,
   });
 

@@ -2,16 +2,18 @@ import { Component, ChangeDetectorRef, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
+import { forkJoin } from 'rxjs';
+
 import { TestService } from '../../core/services/test.service';
-import { TestItem } from '../../core/models/test.model';
 import { AlertService } from '../../core/services/alert.service';
 import { AuthService } from '../../core/services/auth.service';
 import { UserService } from '../../core/services/user.service';
-import { User } from '../../core/models/user.model';
 import { TareasService } from '../../core/services/tareas.service';
-import { forkJoin } from 'rxjs';
 import { VideoService } from '../../core/services/video.service';
 import { ArticuloService } from '../../core/services/articulo.service';
+
+import { TestItem } from '../../core/models/test.model';
+import { User } from '../../core/models/user.model';
 
 @Component({
   selector: 'app-tests',
@@ -20,26 +22,30 @@ import { ArticuloService } from '../../core/services/articulo.service';
   imports: [CommonModule, FormsModule, HttpClientModule]
 })
 export class TestsComponent implements OnInit {
-  // Método estático para el Dashboard
   static getCompletedCount(tests: TestItem[]): number {
     if (!Array.isArray(tests)) return 0;
     return tests.filter(test => !test.isDeleted).length;
   }
+
   tests: TestItem[] = [];
   testsPendientes: TestItem[] = [];
   testsRealizados: TestItem[] = [];
 
-  nuevoTest: TestItem = { nombre: '', preguntas: [{ tituloPregunta: '', opcionesRespuesta: ['', ''], respuestaCorrecta: '' }], logros: [], isDeleted: false };
+  nuevoTest: TestItem = {
+    nombre: '',
+    preguntas: [{ tituloPregunta: '', opcionesRespuesta: ['', ''], respuestaCorrecta: '' }],
+    logros: [],
+    isDeleted: false
+  };
   testEditar: Partial<TestItem> | null = null;
-  loading: boolean = true;
+  testAResponder: TestItem | null = null;
+  respuestasUsuario: string[] = [];
 
   selectedLogros: { nombre: string; iconoUrl: string; _id?: string }[] = [];
   nuevoLogro: { nombre: string; iconoUrl: string } = { nombre: '', iconoUrl: '' };
   mostrarFormularioLogro: boolean = false;
   numPreguntas: number = 1;
-
-  testAResponder: TestItem | null = null;
-  respuestasUsuario: string[] = [];
+  loading: boolean = true;
 
   constructor(
     private testService: TestService,
@@ -52,8 +58,6 @@ export class TestsComponent implements OnInit {
     private articuloService: ArticuloService
   ) { }
 
-
-
   ngOnInit(): void {
     this.cargarTests();
     this.numPreguntas = this.nuevoTest.preguntas.length;
@@ -62,55 +66,45 @@ export class TestsComponent implements OnInit {
 
   cargarTests(): void {
     this.loading = true;
-    if (this.authService.role === 'editor') {
-      this.testService.getAll().subscribe({
-        next: tests => {
-          this.tests = tests.filter(test => !test.isDeleted);
-          this.recalcularListasUsuario();
-          this.loading = false;
-          this.cdr.detectChanges();
-        },
-        error: () => this.loading = false
-      });
-    } else {
-      this.testService.getAll().subscribe({
-        next: tests => {
-          this.tests = tests.filter(test => !test.isDeleted);
-          this.recalcularListasUsuario();
-          this.loading = false;
-          this.cdr.detectChanges();
-        },
-        error: () => this.loading = false
-      });
-    }
+    this.testService.getAll().subscribe({
+      next: tests => {
+ 
+        if (this.authService.role === 'editor') {
+          this.tests = tests; // Mostrar todos los tests
+        } else {
+          this.tests = tests.filter(test => !test.isDeleted); // Solo tests activos para usuarios
+        }
+        this.recalcularListasUsuario();
+        this.loading = false;
+        this.cdr.detectChanges();
+      },
+      error: () => this.loading = false
+    });
   }
-
-  trackPregunta(index: number) { return index; }
-  trackOpcion(index: number) { return index; }
-  agregarPregunta(enEdicion: boolean = false) {
+  trackPregunta(index: number): number { return index; }
+  trackOpcion(index: number): number { return index; }
+  agregarPregunta(enEdicion: boolean = false): void {
     const test = enEdicion ? this.testEditar : this.nuevoTest;
     test?.preguntas?.push({ tituloPregunta: '', opcionesRespuesta: ['', ''], respuestaCorrecta: '' });
     this.numPreguntas = Math.max(1, (test?.preguntas?.length ?? 0));
   }
 
-  agregarOpcion(indexPregunta: number, enEdicion: boolean = false) {
+  agregarOpcion(indexPregunta: number, enEdicion: boolean = false): void {
     const test = enEdicion ? this.testEditar : this.nuevoTest;
     test?.preguntas?.[indexPregunta]?.opcionesRespuesta.push('');
   }
 
-  eliminarPregunta(indexPregunta: number, enEdicion: boolean = false) {
+  eliminarPregunta(indexPregunta: number, enEdicion: boolean = false): void {
     const test = enEdicion ? this.testEditar : this.nuevoTest;
-    if (!test?.preguntas) return;
-    if (test.preguntas.length <= 1) return; // mantener al menos una
+    if (!test?.preguntas || test.preguntas.length <= 1) return;
     test.preguntas.splice(indexPregunta, 1);
     if (!enEdicion) this.numPreguntas = test.preguntas.length;
   }
 
-  eliminarOpcion(indexPregunta: number, indexOpcion: number, enEdicion: boolean = false) {
+  eliminarOpcion(indexPregunta: number, indexOpcion: number, enEdicion: boolean = false): void {
     const test = enEdicion ? this.testEditar : this.nuevoTest;
     const opciones = test?.preguntas?.[indexPregunta]?.opcionesRespuesta;
-    if (!opciones) return;
-    if (opciones.length <= 1) return; // al menos una opción
+    if (!opciones || opciones.length <= 1) return;
     opciones.splice(indexOpcion, 1);
   }
 
@@ -118,10 +112,12 @@ export class TestsComponent implements OnInit {
     const n = Math.max(1, Math.floor(this.numPreguntas || 1));
     this.numPreguntas = n;
     const actual = this.nuevoTest.preguntas.length;
-    if (n > actual) for (let i = actual; i < n; i++) this.agregarPregunta(false);
-    else if (n < actual) this.nuevoTest.preguntas.splice(n);
+    if (n > actual) {
+      for (let i = actual; i < n; i++) this.agregarPregunta(false);
+    } else if (n < actual) {
+      this.nuevoTest.preguntas.splice(n);
+    }
   }
-
   crearTest(): void {
     const payload: TestItem = {
       nombre: this.nuevoTest.nombre,
@@ -144,7 +140,12 @@ export class TestsComponent implements OnInit {
   }
 
   private resetearFormulario(): void {
-    this.nuevoTest = { nombre: '', preguntas: [{ tituloPregunta: '', opcionesRespuesta: ['', ''], respuestaCorrecta: '' }], logros: [], isDeleted: false };
+    this.nuevoTest = {
+      nombre: '',
+      preguntas: [{ tituloPregunta: '', opcionesRespuesta: ['', ''], respuestaCorrecta: '' }],
+      logros: [],
+      isDeleted: false
+    };
     this.selectedLogros = [];
     this.nuevoLogro = { nombre: '', iconoUrl: '' };
     this.mostrarFormularioLogro = false;
@@ -159,7 +160,6 @@ export class TestsComponent implements OnInit {
       this.alert.warning('Ya existe un logro con ese nombre.');
       return;
     }
-
     this.selectedLogros.push({
       nombre: this.nuevoLogro.nombre.trim(),
       iconoUrl: this.nuevoLogro.iconoUrl?.trim() || ''
@@ -177,7 +177,6 @@ export class TestsComponent implements OnInit {
     if (index < 0 || index >= this.selectedLogros.length) return;
     this.selectedLogros.splice(index, 1);
   }
-
   abrirEditarTest(t: TestItem): void {
     this.testService.getOne(t._id!).subscribe(res => this.testEditar = { ...res });
   }
@@ -195,21 +194,16 @@ export class TestsComponent implements OnInit {
       error: () => this.alert.error('No se pudo actualizar el test.')
     });
   }
-
   toggleTestStatus(t: TestItem): void {
     if (t.isDeleted) {
       this.alert.confirm(`¿Confirmas activar el test "${t.nombre}"?`).then(confirmed => {
         if (!confirmed || !t._id) return;
-        
-        const payload = { isDeleted: false };
-        this.testService.update(t._id, payload).subscribe({
+        this.testService.update(t._id, { isDeleted: false }).subscribe({
           next: () => {
             this.cargarTests();
             this.alert.success('El test se activó correctamente.');
           },
-          error: () => {
-            this.alert.error('No se pudo activar el test.');
-          }
+          error: () => this.alert.error('No se pudo activar el test.')
         });
       });
     } else {
@@ -218,16 +212,12 @@ export class TestsComponent implements OnInit {
         'Los usuarios dejarán de ver este test hasta que lo actives nuevamente.'
       ).then(confirmed => {
         if (!confirmed || !t._id) return;
-        
-        const payload = { isDeleted: true };
-        this.testService.update(t._id, payload).subscribe({
+        this.testService.update(t._id, { isDeleted: true }).subscribe({
           next: () => {
             this.cargarTests();
             this.alert.success('El test se desactivó correctamente.');
           },
-          error: () => {
-            this.alert.error('No se pudo desactivar el test.');
-          }
+          error: () => this.alert.error('No se pudo desactivar el test.')
         });
       });
     }
@@ -243,9 +233,9 @@ export class TestsComponent implements OnInit {
     ).then(confirmed => {
       if (!confirmed || !t._id) return;
       this.testService.delete(t._id).subscribe({
-        next: () => { 
-          this.cargarTests(); 
-          this.alert.success('El test se eliminó permanentemente.'); 
+        next: () => {
+          this.cargarTests();
+          this.alert.success('El test se eliminó permanentemente.');
         },
         error: () => this.alert.error('No se pudo eliminar el test.')
       });
@@ -253,32 +243,32 @@ export class TestsComponent implements OnInit {
   }
   abrirResponderTest(t: TestItem): void {
     const userId = this.authService.id;
-    if (!userId) { this.alert.warning('Debes iniciar sesión.'); return; }
+    if (!userId) {
+      this.alert.warning('Debes iniciar sesión.');
+      return;
+    }
 
     this.userService.getOne(userId).subscribe({
       next: (user: User) => {
-        if (!user.empresaId || typeof user.empresaId === 'string') {
-
-          this.prepararYMostrarTest(t, userId);
+        // Validar que el usuario tenga empresa asignada
+        if (!user?.empresaId) {
+          this.alert.info('No tienes empresa asignada. Contacta al administrador.');
           return;
         }
-        const categoriasEmpresa = user.categoriasEmpresa || [];
         
+        const categoriasEmpresa = user.categoriasEmpresa || [];
         if (categoriasEmpresa.length === 0) {
           this.prepararYMostrarTest(t, userId);
           return;
         }
         this.validarContenidoPorCategorias(t, userId, categoriasEmpresa);
       },
-      error: () => {
-        this.alert.error('No se pudo obtener la información del usuario.');
-      }
+      error: () => this.alert.error('No se pudo obtener la información del usuario.')
     });
   }
 
   private validarContenidoPorCategorias(t: TestItem, userId: string, categoriasEmpresa: any[]): void {
     const categoriaIds = categoriasEmpresa.map(cat => cat._id).filter(id => id);
-
     forkJoin({
       videos: this.videoService.getAll(),
       articulos: this.articuloService.getAll(),
@@ -290,7 +280,6 @@ export class TestsComponent implements OnInit {
           const videoCatId = typeof v.categoriaId === 'object' ? v.categoriaId?._id : v.categoriaId;
           return categoriaIds.includes(String(videoCatId || ''));
         });
-        
         const artsCat = (articulos || []).filter((a: any) => {
           const artCatId = typeof a.categoriaId === 'object' ? a.categoriaId?._id : a.categoriaId;
           return categoriaIds.includes(String(artCatId || ''));
@@ -301,22 +290,15 @@ export class TestsComponent implements OnInit {
         for (const a of artsCat) requiredCodes.push(`Articulo leído: ${a.titulo}`);
 
         const faltantes = requiredCodes.filter(code => !completadas.has(code));
-        
         if (faltantes.length > 0) {
           const nombresTareas = faltantes.map(code => {
-            if (code.startsWith('Video visualizado: ')) {
-              return code.replace('Video visualizado: ', '');
-            }
-            if (code.startsWith('Articulo leído: ')) {
-              return code.replace('Articulo leído: ', '');
-            }
+            if (code.startsWith('Video visualizado: ')) return code.replace('Video visualizado: ', '');
+            if (code.startsWith('Articulo leído: ')) return code.replace('Articulo leído: ', '');
             return code;
           });
-          
           this.alert.info(`Para poder realizar este test debes tener tus tareas completas: ${nombresTareas.join(', ')}`);
           return;
         }
-
         this.prepararYMostrarTest(t, userId);
       },
       error: () => this.alert.error('No se pudieron validar los contenidos previos.')
@@ -360,7 +342,6 @@ export class TestsComponent implements OnInit {
     this.testService.verificarTest(userId, testId, respuestas).subscribe({
       next: (res) => {
         (document.getElementById('responderTestCerrarBtn') as HTMLButtonElement)?.click();
-
         const aprobado: boolean = !!res?.resultado?.aprobado;
         const nombresLogros = Array.isArray(res?.resultado?.logrosOtorgados)
           ? res.resultado.logrosOtorgados
@@ -380,10 +361,8 @@ export class TestsComponent implements OnInit {
       error: (err) => this.alert.error(err?.error?.message || 'No se pudo verificar el test.')
     });
   }
-
   private recalcularListasUsuario(): void {
     const userId = this.authService.id;
-
     if (!userId) {
       this.testsPendientes = [...(this.tests || [])];
       this.testsRealizados = [];
@@ -391,19 +370,21 @@ export class TestsComponent implements OnInit {
     }
 
     this.tareasService.getAll({ usuarioId: userId }).subscribe({
-              next: (tareas) => {
-          const tareasCompletadas = new Set<string>(
-            (tareas || []).map((t: any) => String(t?.tareaCompletada || ''))
-          );
+      next: (tareas) => {
+        const tareasCompletadas = new Set<string>(
+          (tareas || []).map((t: any) => String(t?.tareaCompletada || ''))
+        );
 
-          this.testsPendientes = [];
-          this.testsRealizados = [];
+        this.testsPendientes = [];
+        this.testsRealizados = [];
 
-          for (const test of this.tests || []) {
-          const testCompletado = `Test completado: ${test.nombre || 'Sin nombre'}`;
-          const testIntentado = `Test intentado: ${test.nombre || 'Sin nombre'}`;
-          const testNombreDirecto = test.nombre || 'Sin nombre';
+        for (const test of this.tests || []) {
+          // Solo incluir tests activos en las listas de usuarios
+          if (test.isDeleted) continue;
           
+          const testCompletado = `Test completado: ${test.nombre || 'Sin nombre'}`;
+          const testNombreDirecto = test.nombre || 'Sin nombre';
+
           const encontradoCompletado = tareasCompletadas.has(testCompletado);
           const encontradoDirecto = tareasCompletadas.has(testNombreDirecto);
 
@@ -413,7 +394,6 @@ export class TestsComponent implements OnInit {
             this.testsPendientes.push(test);
           }
         }
-
         this.cdr.detectChanges();
       },
       error: (error) => {

@@ -1,8 +1,7 @@
 <div class="card shadow-sm mx-4">
   <div class="card-header bg-primary-subtle text-primary-emphasis d-flex justify-content-between align-items-center">
     <h5 class="mb-0">Categorías</h5>
-    <button class="btn btn-brand" data-bs-toggle="modal" data-bs-target="#modalCrearCategoria">Crear nueva
-      categoría</button>
+    <button class="btn btn-brand" data-bs-toggle="modal" data-bs-target="#modalCrearCategoria">Crear nueva</button>
   </div>
   <div class="card-body">
     <div class="row g-2 mb-3">
@@ -13,7 +12,7 @@
         <button class="btn btn-outline-secondary" (click)="cargarCategorias()">Buscar</button>
       </div>
     </div>
-    <div class="table-responsive">
+    <div class="table-responsive" *ngIf="categoriasResp.items.length; else vacio">
       <table class="table table-striped table-sm">
         <thead>
           <tr>
@@ -29,20 +28,16 @@
             <td>{{ categoriaNombrePorId(c.categoriaPadre) }}</td>
             <td>{{ empresaNombrePorId(c.empresaId) }}</td>
             <td class="text-end">
-              <button class="btn btn-link text-dark p-0 me-2" data-bs-toggle="modal"
-                data-bs-target="#modalEditarCategoria" (click)="abrirEditarCategoria(c)" title="Editar">
-                <i class="bi bi-pencil-fill"></i>
-              </button>
-              <button class="btn btn-link text-dark p-0" (click)="confirmarEliminarCategoria(c)" title="Eliminar">
-                <i class="bi bi-trash3-fill"></i>
-              </button>
+              <ng-container *ngTemplateOutlet="accionesCategoria; context: {$implicit: c}"></ng-container>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
-
-    <nav *ngIf="categoriasResp" class="d-flex justify-content-between align-items-center">
+    <ng-template #vacio>
+      <div class="text-muted small">No hay categorías.</div>
+    </ng-template>
+    <nav *ngIf="categoriasResp" class="d-flex justify-content-between align-items-center mt-2">
       <span>Pagina {{ categoriasResp.page }} / {{ categoriasResp.totalPages }}</span>
       <div class="btn-group">
         <button class="btn btn-outline-secondary" (click)="cambiarPaginaCategorias(categoriasResp.page - 1)"
@@ -53,6 +48,17 @@
     </nav>
   </div>
 </div>
+<ng-template #accionesCategoria let-cat>
+  <div class="d-inline-flex align-items-center gap-2">
+    <button class="btn btn-link text-dark p-0" data-bs-toggle="modal" data-bs-target="#modalEditarCategoria"
+      (click)="abrirEditarCategoria(cat)" title="Editar">
+      <i class="bi bi-pencil-fill"></i>
+    </button>
+    <button class="btn btn-link text-dark p-0" (click)="confirmarEliminarCategoria(cat)" title="Eliminar">
+      <i class="bi bi-trash3-fill"></i>
+    </button>
+  </div>
+</ng-template>
 <div class="modal fade" id="modalCrearCategoria" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -83,7 +89,7 @@
         <div class="mb-3">
           <label class="form-label">Jerarquía</label>
           <input type="number" class="form-control" [(ngModel)]="nuevaCategoria.jerarquia">
-          <small class="text-muted">0 es la jerarquía más alta. Usa números mayores para niveles inferiores.</small>
+          <small class="text-muted">0 es la jerarquía más alta.</small>
         </div>
       </div>
       <div class="modal-footer">
@@ -107,8 +113,11 @@
           <input class="form-control" [(ngModel)]="c.nombre">
         </div>
         <div class="mb-3">
-          <label class="form-label">Categoría Padre (ID)</label>
-          <input class="form-control" [(ngModel)]="c.categoriaPadre">
+          <label class="form-label">Categoría Padre</label>
+          <select class="form-select" [(ngModel)]="c.categoriaPadre">
+            <option [ngValue]="null">Ninguna</option>
+            <option *ngFor="let op of todasCategorias" [ngValue]="op._id">{{ op.nombre }}</option>
+          </select>
         </div>
         <div class="mb-3">
           <label class="form-label">Empresa</label>

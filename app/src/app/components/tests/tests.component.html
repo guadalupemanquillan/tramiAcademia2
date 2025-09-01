@@ -6,8 +6,7 @@
   </div>
   <div class="card-body">
     <div *ngIf="!loading">
-      <!-- Tabla para editor -->
-      <table class="table table-striped table-sm" *ngIf="authService.role === 'editor'; else userTable">
+      <table class="table table-striped table-sm" *ngIf="authService.role === 'editor'; else userView">
         <thead>
           <tr>
             <th>Nombre</th>
@@ -23,22 +22,22 @@
             <td>{{ t.preguntas.length }}</td>
             <td>{{ t.logros?.length ?? 0 }}</td>
             <td>
-              <span *ngIf="t.isDeleted" class="badge bg-secondary">Inactivo</span>
-              <span *ngIf="!t.isDeleted" class="badge bg-success">Activo</span>
+              <span *ngIf="t.isDeleted" class="badge bg-secondary" title="No visible para usuarios">Inactivo</span>
+              <span *ngIf="!t.isDeleted" class="badge bg-success" title="Visible para usuarios">Activo</span>
             </td>
             <td class="text-end">
               <div class="d-inline-flex align-items-center gap-2">
                 <button class="btn btn-link text-dark p-0" data-bs-toggle="modal" data-bs-target="#modalEditarTest"
-                  (click)="abrirEditarTest(t)" title="Editar">
+                  (click)="abrirEditarTest(t)" title="Editar" aria-label="Editar test">
                   <i class="bi bi-pencil-fill"></i>
                 </button>
-                <button class="btn btn-link text-dark p-0" (click)="toggleTestStatus(t)" 
-                  [title]="t.isDeleted ? 'Activar test' : 'Desactivar test'">
-                  <i *ngIf="t.isDeleted" class="bi bi-play-circle-fill text-success"></i>
-                  <i *ngIf="!t.isDeleted" class="bi bi-pause-circle-fill text-warning"></i>
+               <button class="btn btn-link text-dark p-0" (click)="toggleTestStatus(t)" title="Activar o desactivar test"
+                  [attr.aria-label]="t.isDeleted ? 'Activar test' : 'Desactivar test'">
+                  <i *ngIf="t.isDeleted" class="bi bi-play-circle-fill"></i>
+                  <i *ngIf="!t.isDeleted" class="bi bi-pause-circle-fill"></i>
                 </button>
-                <button class="btn btn-link text-danger p-0" (click)="confirmarEliminarTest(t)" 
-                  title="Eliminar permanentemente">
+                <button class="btn btn-link text-dark p-0" (click)="confirmarEliminarTest(t)" 
+                  title="Eliminar permanentemente" aria-label="Eliminar test permanentemente">
                   <i class="bi bi-trash3-fill"></i>
                 </button>
               </div>
@@ -46,34 +45,30 @@
           </tr>
         </tbody>
       </table>
-      <!-- Vista usuario -->
-      <ng-template #userTable>
+      <ng-template #userView>
         <div class="row g-3 justify-content-center">
           <div class="col-12 col-sm-6 col-xl-5">
-            <ng-container *ngTemplateOutlet="testList; context:{
+            <ng-container *ngTemplateOutlet="testCard; context:{
               tests: testsPendientes,
               title: 'Pendientes',
               badgeClass: 'bg-warning',
               emptyMsg: 'Sin tests pendientes.',
-              buttonText: 'Realizar',
-              buttonClick: abrirResponderTest.bind(this)
+              showButton: true
             }"></ng-container>
           </div>
           <div class="col-12 col-sm-6 col-xl-5">
-            <ng-container *ngTemplateOutlet="testList; context:{
+            <ng-container *ngTemplateOutlet="testCard; context:{
               tests: testsRealizados,
               title: 'Realizados',
               badgeClass: 'bg-success',
               emptyMsg: 'Aún no realizaste tests.',
-              buttonText: null,
-              buttonClick: null
+              showButton: false
             }"></ng-container>
           </div>
         </div>
       </ng-template>
-      <!-- Template lista genérica -->
-      <ng-template #testList let-tests="tests" let-title="title" let-badgeClass="badgeClass" let-emptyMsg="emptyMsg"
-        let-buttonText="buttonText" let-buttonClick="buttonClick">
+      <ng-template #testCard let-tests="tests" let-title="title" let-badgeClass="badgeClass" 
+                   let-emptyMsg="emptyMsg" let-showButton="showButton">
         <div class="card shadow-sm h-100">
           <div class="card-header btn-brand text-white d-flex justify-content-between align-items-center py-2">
             <div class="fw-semibold">{{ title }}</div>
@@ -90,8 +85,10 @@
                   <span class="fw-semibold">{{ t.nombre || 'Test' }}</span>
                   <span class="small text-muted">{{ t.preguntas.length }} preguntas</span>
                 </div>
-                <button *ngIf="buttonText" class="btn btn-sm btn-outline-primary" (click)="buttonClick(t)">{{ buttonText }}</button>
-                <span *ngIf="!buttonText" class="badge bg-success">Completado</span>
+                <button *ngIf="showButton" class="btn btn-sm btn-outline-primary" (click)="abrirResponderTest(t)">
+                  Realizar
+                </button>
+                <span *ngIf="!showButton" class="badge bg-success">Completado</span>
               </li>
             </ul>
           </div>
@@ -100,10 +97,18 @@
     </div>
   </div>
 </div>
-<!-- Modal Crear / Editar -->
 <ng-template #preguntasForm let-test="test" let-edicion="edicion">
   <div *ngFor="let p of test.preguntas; let i=index; trackBy: trackPregunta" class="border rounded p-3 mb-3">
-    <div class="mb-2">
+    <div class="mb-2 d-flex align-items-start gap-2" *ngIf="edicion">
+      <div class="flex-grow-1">
+        <label class="form-label">Título de la pregunta</label>
+        <input class="form-control" [(ngModel)]="p.tituloPregunta" [ngModelOptions]="{updateOn: 'blur'}"
+          placeholder="Título de la pregunta" title="Título de la pregunta">
+      </div>
+      <button type="button" class="btn btn-outline-danger mt-4" (click)="eliminarPregunta(i, edicion)"
+        title="Eliminar pregunta">Eliminar</button>
+    </div>
+    <div class="mb-2" *ngIf="!edicion">
       <label class="form-label">Título de la pregunta</label>
       <input class="form-control" [(ngModel)]="p.tituloPregunta" [ngModelOptions]="{updateOn: 'blur'}"
         placeholder="Título de la pregunta" title="Título de la pregunta">
@@ -113,6 +118,8 @@
       <div *ngFor="let o of p.opcionesRespuesta; let j=index; trackBy: trackOpcion" class="input-group mb-1">
         <input class="form-control" [(ngModel)]="p.opcionesRespuesta[j]" [ngModelOptions]="{updateOn: 'blur'}"
           placeholder="Opción de respuesta" title="Opción de respuesta">
+        <button *ngIf="edicion" type="button" class="btn btn-outline-danger" (click)="eliminarOpcion(i, j, edicion)"
+          title="Eliminar opción">&times;</button>
       </div>
       <button class="btn btn-sm btn-outline-secondary" (click)="agregarOpcion(i, edicion)">Agregar opción</button>
     </div>
@@ -123,66 +130,53 @@
     </div>
   </div>
 </ng-template>
-<!-- Modal Crear Test -->
 <div class="modal fade" id="modalCrearTest" tabindex="-1" *ngIf="authService.role === 'editor'">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Crear Test</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"
-          id="crearTestCerrarBtn"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="crearTestCerrarBtn"></button>
       </div>
       <div class="modal-body">
         <div class="row g-3 mb-3">
           <div class="col-12">
             <label class="form-label">Nombre del test</label>
-            <input class="form-control" [(ngModel)]="nuevoTest.nombre" placeholder="Nombre del test"
-              title="Nombre del test">
+            <input class="form-control" [(ngModel)]="nuevoTest.nombre" placeholder="Nombre del test" title="Nombre del test">
           </div>
           <div class="col-12">
             <div class="form-check">
               <input class="form-check-input" type="checkbox" [(ngModel)]="nuevoTest.isDeleted" id="testInactivo">
-              <label class="form-check-label" for="testInactivo">
-                Test inactivo (no visible para usuarios)
-              </label>
+              <label class="form-check-label" for="testInactivo">Test inactivo (no visible para usuarios)</label>
             </div>
           </div>
           <div class="col-12">
             <label class="form-label">Logros del test (opcional)</label>
-            
-            <!-- Botón para expandir formulario de logro -->
             <div class="mb-3" *ngIf="!mostrarFormularioLogro">
               <button type="button" class="btn btn-outline-primary" (click)="mostrarFormularioLogro = true">
                 <i class="bi bi-plus-circle me-2"></i>Agregar logro
               </button>
             </div>
-
-            <!-- Formulario expandido para crear logro -->
             <div class="mb-3" *ngIf="mostrarFormularioLogro">
               <div class="row g-2 mb-2">
                 <div class="col-5">
-                  <input class="form-control" [(ngModel)]="nuevoLogro.nombre" placeholder="Nombre del logro" 
-                         title="Nombre del logro">
+                  <input class="form-control" [(ngModel)]="nuevoLogro.nombre" placeholder="Nombre del logro" title="Nombre del logro">
                 </div>
                 <div class="col-5">
-                  <input class="form-control" [(ngModel)]="nuevoLogro.iconoUrl" placeholder="URL del icono (opcional)" 
-                         title="URL del icono">
+                  <input class="form-control" [(ngModel)]="nuevoLogro.iconoUrl" placeholder="URL del icono (opcional)" title="URL del icono">
                 </div>
                 <div class="col-2">
                   <div class="d-flex gap-1">
-                                      <button class="btn btn-outline-primary" type="button" (click)="agregarNuevoLogro()" 
-                          [disabled]="!nuevoLogro.nombre.trim()">
+                    <button class="btn btn-outline-primary" type="button" (click)="agregarNuevoLogro()" title="Agregar logro"
+                      [disabled]="!nuevoLogro.nombre.trim()">
                       <i class="bi bi-check-lg"></i>
                     </button>
-                    <button class="btn btn-outline-secondary" type="button" (click)="cancelarNuevoLogro()">
+                    <button class="btn btn-outline-secondary" type="button" (click)="cancelarNuevoLogro()" title="Cancelar agregar logro">
                       <i class="bi bi-x-lg"></i>
                     </button>
                   </div>
                 </div>
               </div>
             </div>
-
-            <!-- Lista de logros agregados -->
             <div class="col-12">
               <label class="form-label">Logros agregados</label>
               <ul class="list-group">
@@ -192,20 +186,16 @@
                     <img *ngIf="sl.iconoUrl" [src]="sl.iconoUrl" alt="icon" width="20" height="20">
                     <span>{{ sl.nombre }}</span>
                   </div>
-                  <button type="button" class="btn btn-sm btn-outline-danger"
-                    (click)="quitarLogroSeleccionado(i)">Quitar</button>
+                  <button type="button" class="btn btn-sm btn-outline-danger" (click)="quitarLogroSeleccionado(i)">Quitar</button>
                 </li>
                 <li *ngIf="selectedLogros.length === 0" class="list-group-item text-muted small">Ningún logro agregado</li>
               </ul>
             </div>
           </div>
-          
         </div>
-        <!-- Editor de preguntas en creación -->
         <ng-container *ngTemplateOutlet="preguntasForm; context:{ test: nuevoTest, edicion: false }"></ng-container>
         <div>
-          <button type="button" class="btn btn-sm btn-outline-primary" (click)="agregarPregunta(false)">Agregar otra
-            pregunta</button>
+          <button type="button" class="btn btn-sm btn-outline-primary" (click)="agregarPregunta(false)">Agregar otra pregunta</button>
         </div>
       </div>
       <div class="modal-footer">
@@ -215,62 +205,27 @@
     </div>
   </div>
 </div>
-<!-- Modal Editar Test -->
-<div class="modal fade" id="modalEditarTest" tabindex="-1"
-  *ngIf="authService.role === 'editor' && testEditar">
+<div class="modal fade" id="modalEditarTest" tabindex="-1" *ngIf="authService.role === 'editor' && testEditar">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Editar Test</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"
-          id="editarTestCerrarBtn"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="editarTestCerrarBtn"></button>
       </div>
       <div class="modal-body">
         <div class="mb-3">
           <label class="form-label">Nombre del test</label>
-          <input class="form-control" [(ngModel)]="testEditar!.nombre" placeholder="Nombre del test"
-            title="Nombre del test">
+          <input class="form-control" [(ngModel)]="testEditar!.nombre" placeholder="Nombre del test" title="Nombre del test">
         </div>
         <div class="mb-3">
           <div class="form-check">
             <input class="form-check-input" type="checkbox" [(ngModel)]="testEditar!.isDeleted" id="testInactivoEditar">
-            <label class="form-check-label" for="testInactivoEditar">
-              Test inactivo (no visible para usuarios)
-            </label>
+            <label class="form-check-label" for="testInactivoEditar">Test inactivo (no visible para usuarios)</label>
           </div>
         </div>
-        <!-- Editor de preguntas en edición -->
-        <div *ngFor="let p of testEditar?.preguntas; let i=index; trackBy: trackPregunta"
-          class="border rounded p-3 mb-3">
-          <div class="mb-2 d-flex align-items-start gap-2">
-            <div class="flex-grow-1">
-              <label class="form-label">Título de la pregunta</label>
-              <input class="form-control" [(ngModel)]="p.tituloPregunta" [ngModelOptions]="{updateOn: 'blur'}"
-                placeholder="Título de la pregunta" title="Título de la pregunta">
-            </div>
-            <button type="button" class="btn btn-outline-danger mt-4" (click)="eliminarPregunta(i, true)"
-              title="Eliminar pregunta">Eliminar</button>
-          </div>
-          <div class="mb-2">
-            <label class="form-label">Opciones de respuesta</label>
-            <div *ngFor="let o of p.opcionesRespuesta; let j=index; trackBy: trackOpcion" class="input-group mb-1">
-              <input class="form-control" [(ngModel)]="p.opcionesRespuesta[j]" [ngModelOptions]="{updateOn: 'blur'}"
-                placeholder="Opción de respuesta" title="Opción de respuesta">
-              <button type="button" class="btn btn-outline-danger" (click)="eliminarOpcion(i, j, true)"
-                title="Eliminar opción">&times;</button>
-            </div>
-            <button type="button" class="btn btn-sm btn-outline-secondary" (click)="agregarOpcion(i, true)">Agregar
-              opción</button>
-          </div>
-          <div class="mb-2">
-            <label class="form-label">Respuesta correcta</label>
-            <input class="form-control" [(ngModel)]="p.respuestaCorrecta" [ngModelOptions]="{updateOn: 'blur'}"
-              placeholder="Respuesta correcta" title="Respuesta correcta">
-          </div>
-        </div>
+        <ng-container *ngTemplateOutlet="preguntasForm; context:{ test: testEditar, edicion: true }"></ng-container>
         <div>
-          <button type="button" class="btn btn-sm btn-outline-primary" (click)="agregarPregunta(true)">Agregar otra
-            pregunta</button>
+          <button type="button" class="btn btn-sm btn-outline-primary" (click)="agregarPregunta(true)">Agregar otra pregunta</button>
         </div>
       </div>
       <div class="modal-footer">
@@ -280,7 +235,6 @@
     </div>
   </div>
 </div>
-<!-- Modal Responder Test (usuario) -->
 <div class="modal fade" id="modalResponderTest" tabindex="-1">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
@@ -294,14 +248,12 @@
           <div class="fw-semibold mb-2">{{ p.tituloPregunta || ('Pregunta ' + (i+1)) }}</div>
           <div class="ms-1" *ngIf="p.opcionesRespuesta?.length; else sinOpciones">
             <div *ngFor="let opt of p.opcionesRespuesta; let j=index" class="form-check mb-1">
-              <input class="form-check-input" type="radio" [name]="'preg'+i" [value]="opt"
-                [(ngModel)]="respuestasUsuario[i]">
+              <input class="form-check-input" type="radio" [name]="'preg'+i" [value]="opt" [(ngModel)]="respuestasUsuario[i]" title="Opción de respuesta">
               <label class="form-check-label">{{ opt }}</label>
             </div>
           </div>
           <ng-template #sinOpciones>
-            <input class="form-control" [(ngModel)]="respuestasUsuario[i]" placeholder="Escribe tu respuesta"
-              title="Respuesta libre">
+            <input class="form-control" [(ngModel)]="respuestasUsuario[i]" placeholder="Escribe tu respuesta" title="Respuesta libre">
           </ng-template>
         </div>
       </div>

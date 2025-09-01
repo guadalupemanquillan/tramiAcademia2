@@ -15,6 +15,7 @@ const userSchema = new mongoose.Schema({
   empresaId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Empresa",
+    required: true
   },
   password: {
     type: String,

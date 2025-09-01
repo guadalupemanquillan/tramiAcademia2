@@ -7,7 +7,6 @@ import { Tarea, UsuarioRef, UsuarioTareas } from '../../core/models/tareas.model
 import { AlertService } from '../../core/services/alert.service';
 import { AuthService } from '../../core/services/auth.service';
 
-
 @Component({
   selector: 'app-tareas',
   templateUrl: './tareas.component.html',
@@ -32,37 +31,31 @@ export class TareasComponent implements OnInit {
 
   cargarTareas(): void {
     this.loading = true;
-    
-    // Solo para editores, mostrar todas las tareas (pero sin tests)
     this.tareasService.getAll().subscribe({
-      next: data => { 
-        // SOLO mostrar videos y artículos para editores
+      next: data => {
         this.tareas = data.filter(tarea => {
           const tareaCompletada = String(tarea?.tareaCompletada || '');
-          return tareaCompletada.startsWith('Video visualizado:') || 
-                 tareaCompletada.startsWith('Articulo leído:');
+          return tareaCompletada.startsWith('Video visualizado:') ||
+            tareaCompletada.startsWith('Articulo leído:');
         });
         this.agruparTareasPorUsuario();
-        this.loading = false; 
-        this.cdr.detectChanges(); 
+        this.loading = false;
+        this.cdr.detectChanges();
       },
-      error: () => { 
-        this.loading = false; 
+      error: () => {
+        this.loading = false;
       }
     });
   }
 
   private agruparTareasPorUsuario(): void {
     const grupos = new Map<string, Tarea[]>();
-    
-    // SOLO mostrar videos y artículos antes de agrupar
     const tareasSinTests = this.tareas.filter(tarea => {
       const tareaCompletada = String(tarea?.tareaCompletada || '');
-      return tareaCompletada.startsWith('Video visualizado:') || 
-             tareaCompletada.startsWith('Articulo leído:');
+      return tareaCompletada.startsWith('Video visualizado:') ||
+        tareaCompletada.startsWith('Articulo leído:');
     });
-    
-    // Agrupar tareas por usuario
+
     tareasSinTests.forEach(tarea => {
       const usuarioId = typeof tarea.usuarioId === 'object' ? tarea.usuarioId._id : tarea.usuarioId;
       if (usuarioId) {
@@ -73,7 +66,6 @@ export class TareasComponent implements OnInit {
       }
     });
 
-    // Convertir a array de UsuarioTareas
     this.usuariosTareas = Array.from(grupos.entries()).map(([usuarioId, tareas]) => ({
       usuarioId,
       nombreUsuario: this.displayUsuario(tareas[0].usuarioId),
@@ -86,7 +78,6 @@ export class TareasComponent implements OnInit {
       expanded: false
     }));
 
-    // Ordenar por total de tareas (descendente)
     this.usuariosTareas.sort((a, b) => b.totalTareas - a.totalTareas);
   }
 
@@ -94,10 +85,6 @@ export class TareasComponent implements OnInit {
     usuario.expanded = !usuario.expanded;
   }
 
-
-
-  // Crear/editar/eliminar deshabilitado por requerimiento
-  // Se deja solo lectura
   displayUsuario(usuarioId: string | UsuarioRef): string {
     if (!usuarioId) return '';
     if (typeof usuarioId === 'object' && usuarioId !== null) {
@@ -106,36 +93,29 @@ export class TareasComponent implements OnInit {
     return String(usuarioId);
   }
 
-  // --- Helpers usados por Dashboard ---
-  
-  // Función helper para filtrar tests de manera consistente
   static esTest(tareaCompletada: string): boolean {
     const tarea = String(tareaCompletada || '').toLowerCase();
-    
-    // Patrones específicos de tests
+
     if (tarea.includes('test completado:') ||
-        tarea.includes('test intentado:') ||
-        tarea.includes('test de ') ||
-        tarea.includes('test:') ||
-        tarea.includes('teste ')) {
+      tarea.includes('test intentado:') ||
+      tarea.includes('test de ') ||
+      tarea.includes('test:') ||
+      tarea.includes('teste ')) {
       return true;
     }
-    
-    // Detectar cualquier tarea que contenga la palabra "test" (más agresivo)
+
     if (tarea.includes('test')) {
       return true;
     }
-    
     return false;
   }
 
   static getTotalTareas(tareas: any[] | null | undefined): number {
     if (!Array.isArray(tareas) || tareas.length === 0) return 0;
-    // SOLO contar videos y artículos
     const tareasSinTests = tareas.filter(tarea => {
       const tareaCompletada = String(tarea?.tareaCompletada || '');
-      return tareaCompletada.startsWith('Video visualizado:') || 
-             tareaCompletada.startsWith('Articulo leído:');
+      return tareaCompletada.startsWith('Video visualizado:') ||
+        tareaCompletada.startsWith('Articulo leído:');
     });
     return tareasSinTests.length;
   }
@@ -143,7 +123,6 @@ export class TareasComponent implements OnInit {
   static getUsuariosConTareas(tareas: any[] | null | undefined): number {
     if (!Array.isArray(tareas) || tareas.length === 0) return 0;
     const usuariosUnicos = new Set();
-    // Filtrar tests antes de contar usuarios
     const tareasSinTests = tareas.filter(tarea => {
       return !TareasComponent.esTest(tarea?.tareaCompletada || '');
     });
@@ -155,6 +134,4 @@ export class TareasComponent implements OnInit {
     });
     return usuariosUnicos.size;
   }
-
-
 }

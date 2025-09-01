@@ -42,12 +42,10 @@ export class VideoComponent implements OnInit {
     this.videoService.getAll().subscribe({
       next: data => {
         if (this.authService.role === 'editor') {
-          // Los editores ven todos los videos
           this.videos = data;
           this.loading = false;
           this.cdr.detectChanges();
         } else {
-          // Los usuarios solo ven videos de sus categorías de empresa
           this.filtrarVideosPorEmpresa(data);
         }
       },
@@ -110,8 +108,6 @@ export class VideoComponent implements OnInit {
       });
     });
   }
-
-  // --- Helpers usados por Dashboard ---
   static filterVideosForUser(videos: any[] | null | undefined, user: any | null | undefined): any[] {
     if (!Array.isArray(videos)) return [];
     const categoriaId = (user as any)?.categoriaId || null;
@@ -167,8 +163,7 @@ export class VideoComponent implements OnInit {
           self.lastAllowedTime = 0;
           self.vigilarSeek(e.target, v);
         },
-        onStateChange: (e: any) => {
-          // 0 = ended
+        onStateChange: (e: any) => {  // 0 = ended
           if (e.data === 0) {
             self.onVideoEnded(v);
           }
@@ -181,13 +176,11 @@ export class VideoComponent implements OnInit {
     const check = () => {
       if (!player || typeof player.getCurrentTime !== 'function') return;
       const current = player.getCurrentTime();
-      // Si el usuario se adelanta más de 1.5s, lo regresamos al último punto permitido
       if (current > this.lastAllowedTime + 1.5) {
         player.seekTo(this.lastAllowedTime, true);
       } else {
         this.lastAllowedTime = Math.max(this.lastAllowedTime, current);
       }
-      // terminar cuando finaliza
       const state = player.getPlayerState?.();
       if (state === 0) return; // ended
       requestAnimationFrame(check);
@@ -205,21 +198,14 @@ export class VideoComponent implements OnInit {
     const id = (v as any)?._id as string | undefined;
     return !!(id && this.endedVideos.has(String(id)));
   }
-
-  // Verificar si el video ya fue marcado como visto
   isVideoAlreadyWatched(v: VideoItem): boolean {
     const userId = this.authService.id;
     if (!userId) return false;
-    
-    // Buscar en las tareas existentes si ya existe una tarea para este video
+
     const videoTaskName = `Video visualizado: ${v.titulo}`;
     return this.existingVideoTasks.has(videoTaskName);
   }
-
-  // Set para almacenar las tareas de video ya completadas
   private existingVideoTasks = new Set<string>();
-
-  // Cargar las tareas existentes del usuario
   private cargarTareasExistentes(): void {
     const userId = this.authService.id;
     if (!userId) return;
@@ -235,19 +221,16 @@ export class VideoComponent implements OnInit {
         this.cdr.detectChanges();
       },
       error: () => {
-        // Silenciar error, no es crítico
       }
     });
   }
 
   marcarVideoVisto(v: VideoItem): void {
     const userId = this.authService.id;
-    if (!userId) { 
-      this.alert.warning('Debes iniciar sesión.'); 
-      return; 
+    if (!userId) {
+      this.alert.warning('Debes iniciar sesión.');
+      return;
     }
-
-    // Verificar si ya fue marcado como visto
     if (this.isVideoAlreadyWatched(v)) {
       this.alert.info('Ya has marcado este video como visto anteriormente.');
       return;
@@ -256,7 +239,6 @@ export class VideoComponent implements OnInit {
     const nombre = `Video visualizado: ${v.titulo}`;
     this.tareas.create({ usuarioId: userId, tareaCompletada: nombre } as any).subscribe({
       next: () => {
-        // Agregar a la lista local para evitar duplicados
         this.existingVideoTasks.add(nombre);
         this.cdr.detectChanges();
       },
@@ -271,42 +253,30 @@ export class VideoComponent implements OnInit {
       this.loading = false;
       return;
     }
-
+    // Si la empresa no tiene categorías, no puede ver videos
     this.userService.getOne(userId).subscribe({
       next: (user: User) => {
-        if (!user?.empresaId || typeof user.empresaId === 'string') {
-          // Si no tiene empresa, no puede ver videos
-          this.videos = [];
-          this.loading = false;
-          this.alert.info('No tienes empresa asignada. Contacta al administrador.');
-          this.cdr.detectChanges();
-          return;
-        }
-
         const categoriasEmpresa = user.categoriasEmpresa || [];
         if (categoriasEmpresa.length === 0) {
-          // Si la empresa no tiene categorías, no puede ver videos
           this.videos = [];
           this.loading = false;
           this.alert.info('Tu empresa no tiene categorías asignadas. Contacta al administrador.');
           this.cdr.detectChanges();
           return;
         }
-
         // Obtener IDs de las categorías de la empresa
         const categoriaIds = categoriasEmpresa.map(cat => cat._id).filter(id => id);
-
         // Filtrar videos que pertenecen a las categorías de la empresa
         this.videos = videos.filter(video => {
           if (!video.categoriaId) return false;
-          
+
           let videoCatId: string;
           if (typeof video.categoriaId === 'object' && video.categoriaId !== null) {
             videoCatId = (video.categoriaId as any)._id || video.categoriaId;
           } else {
             videoCatId = video.categoriaId as string;
           }
-          
+
           return categoriaIds.includes(String(videoCatId || ''));
         });
 

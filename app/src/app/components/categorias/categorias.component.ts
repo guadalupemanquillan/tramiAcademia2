@@ -31,37 +31,17 @@ export class CategoriasComponent {
     this.cargarEmpresas();
   }
 
-  // --- Helpers usados por Dashboard ---
-  static getParentCount(categories: any[] | null | undefined): number {
-    if (!Array.isArray(categories) || categories.length === 0) return 0;
-    // Contar categorías que son padres de otras categorías (tienen subcategorías)
-    return categories.filter(c => {
-      // Una categoría es padre si otras categorías la tienen como categoriaPadre
-      return categories.some(otherCat => otherCat?.categoriaPadre === c?._id);
-    }).length;
-  }
-
   cargarCategorias(): void {
     this.categoriaService.getAll(this.categoriasPage, this.categoriasLimit, this.categoriasNombreFiltro)
-      .subscribe({
-        next: resp => { this.categoriasResp = resp; },
-        error: () => { this.categoriasResp = { items: [], page: 1, total: 0, limit: 10, totalPages: 1 }; }
-      });
+      .subscribe({ next: resp => this.categoriasResp = resp, error: () => this.categoriasResp.items = [] });
   }
 
   cargarTodasCategorias(): void {
-    this.categoriaService.getAll(1, 1000, '')
-      .subscribe({
-        next: resp => { this.todasCategorias = resp.items || []; },
-        error: () => { this.todasCategorias = []; }
-      });
+    this.categoriaService.getAll(1, 1000).subscribe({ next: resp => this.todasCategorias = resp.items || [], error: () => this.todasCategorias = [] });
   }
 
   cargarEmpresas(): void {
-    this.empresaService.getAll().subscribe({
-      next: (emps) => { this.empresas = emps || []; },
-      error: () => { this.empresas = []; }
-    });
+    this.empresaService.getAll().subscribe({ next: emps => this.empresas = emps || [], error: () => this.empresas = [] });
   }
 
   cambiarPaginaCategorias(page: number): void {
@@ -72,15 +52,7 @@ export class CategoriasComponent {
 
   crearCategoria(): void {
     if (!this.nuevaCategoria.nombre) return;
-
-    const payload: Partial<Categoria> = {
-      nombre: this.nuevaCategoria.nombre!,
-      categoriaPadre: this.nuevaCategoria.categoriaPadre ?? null,
-      jerarquia: this.nuevaCategoria.jerarquia ?? 0,
-      empresaId: this.nuevaCategoria.empresaId ?? null
-    };
-
-    this.categoriaService.create(payload).subscribe({
+    this.categoriaService.create(this.nuevaCategoria).subscribe({
       next: () => {
         this.nuevaCategoria = { nombre: '', categoriaPadre: null, jerarquia: 0, empresaId: null };
         (document.getElementById('crearCategoriaCerrarBtn') as HTMLButtonElement)?.click();
@@ -88,44 +60,26 @@ export class CategoriasComponent {
         this.cargarTodasCategorias();
         this.alert.success('La categoría se creó correctamente.');
       },
-      error: (err) => {
-        const msg = err?.error?.error || 'No se pudo crear la categoría.';
-        this.alert.error(msg);
-      }
+      error: err => this.alert.error(err?.error?.error || 'No se pudo crear la categoría.')
     });
   }
 
   categoriaNombrePorId(id?: string | null): string {
-    if (!id) return '-';
-    const found = this.todasCategorias.find(c => c._id === id);
-    return found?.nombre || '-';
+    return this.todasCategorias.find(c => c._id === id)?.nombre || '-';
   }
 
   empresaNombrePorId(id?: string | null): string {
-    if (!id) return 'Sin empresa';
-    const found = this.empresas.find(e => e._id === id);
-    return found?.nombre || 'Sin empresa';
+    return this.empresas.find(e => e._id === id)?.nombre || 'Sin empresa';
   }
 
   abrirEditarCategoria(cat: Categoria): void {
     if (!cat._id) return;
-    this.categoriaService.getOne(cat._id).subscribe(c => {
-      this.categoriaEditar = { ...c };
-    });
+    this.categoriaService.getOne(cat._id).subscribe(c => this.categoriaEditar = { ...c });
   }
 
   guardarEdicionCategoria(): void {
     if (!this.categoriaEditar?._id) return;
-
-    const _id = this.categoriaEditar._id;
-    const payload: Partial<Categoria> = {
-      nombre: this.categoriaEditar.nombre!,
-      categoriaPadre: this.categoriaEditar.categoriaPadre ?? null,
-      jerarquia: this.categoriaEditar.jerarquia ?? 0,
-      empresaId: this.categoriaEditar.empresaId ?? null
-    };
-
-    this.categoriaService.update(_id, payload).subscribe({
+    this.categoriaService.update(this.categoriaEditar._id, this.categoriaEditar).subscribe({
       next: () => {
         (document.getElementById('editarCategoriaCerrarBtn') as HTMLButtonElement)?.click();
         this.cargarCategorias();
@@ -137,23 +91,16 @@ export class CategoriasComponent {
 
   confirmarEliminarCategoria(cat: Categoria): void {
     if (!cat._id) return;
-    this.alert.confirm(
-      `¿Confirmas eliminar la categoría "${cat.nombre}"?`,
-      'Esta acción no se puede deshacer.',
-      'Sí, eliminar',
-      'Cancelar',
-      'warning'
-    ).then(confirmed => {
-      if (!confirmed) return;
-      this.categoriaService.delete(cat._id!).subscribe({
-        next: () => {
-          this.cargarCategorias();
-          this.alert.success('La categoría se eliminó correctamente.');
-        },
+    this.alert.confirm(`¿Confirmas eliminar la categoría "${cat.nombre}"?`, 'Esta acción no se puede deshacer.', 'Sí, eliminar', 'Cancelar', 'warning')
+      .then(confirmed => confirmed && this.categoriaService.delete(cat._id!).subscribe({
+        next: () => { this.cargarCategorias(); this.alert.success('La categoría se eliminó correctamente.'); },
         error: () => this.alert.error('No se pudo eliminar la categoría.')
-      });
-    });
+      }));
   }
 
   trackCategoria(index: number, c: Categoria): string | number { return c?._id || index; }
+  static getParentCount(categorias: Categoria[]): number {
+    if (!Array.isArray(categorias)) return 0;
+    return categorias.filter(cat => !cat.categoriaPadre).length;
+  }
 }

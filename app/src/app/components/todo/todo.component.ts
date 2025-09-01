@@ -63,9 +63,6 @@ export class TodoComponent implements OnInit {
       error: () => this.alert.error('No se pudieron cargar las categorías.')
     });
   }
-
-
-
   cargarVideosYArticulos(): void {
     if (this.authService.role === 'editor') {
       forkJoin({

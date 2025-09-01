@@ -1,11 +1,10 @@
+:root { --brand-blue: #15297c; }
 .dashboard-gradient {/* Fondo difuminado solo para dashboard */
   background: linear-gradient(180deg, #d7ecff 0%, #f8fbff 40%, #ffffff 100%);
 }
-
-/* Botón azul sólido de marca (sin afectar el primary de Bootstrap para el sidebar) */
-.btn-brand {
-  background-color: #15297c;
-  border-color: #15297c;
+.btn-brand {/* Botón azul sólido de marca (sin afectar el primary de Bootstrap para el sidebar) */
+  background-color: var(--brand-blue);
+  border-color: var(--brand-blue);
   color: #fff;
 }
 .btn-brand:hover,
@@ -14,6 +13,12 @@
   border-color: #102063;
   color: #fff;
 }
+/* Azul de marca reutilizable */
+.brand-bg { background-color: var(--brand-blue) !important; }
+.brand-border { border-color: var(--brand-blue) !important; }
+.brand-text { color: var(--brand-blue) !important; }
+/* Tamaños/figuras reutilizables */
+.circle-40 { width: 40px; height: 40px; border-radius: 50%; }
 /* Utilidad para mitades en acciones detalle */
 .btn-half { max-width: 50%; }
 /* Modales - estilo unificado */
@@ -26,8 +31,7 @@
   background-color: var(--bs-primary-bg-subtle, #e7f1ff);
   color: var(--bs-primary-text-emphasis, #0d3b66);
 }
-/* Dashboard donut chart (minimal CSS, reutiliza colores de Bootstrap) */
-.donut {
+.donut {/* Dashboard donut chart (minimal CSS, reutiliza colores de Bootstrap) */
   width: 84px;
   height: 84px;
   border-radius: 50%;
@@ -42,8 +46,7 @@
   font-weight: 600;
   background: radial-gradient(closest-side, #fff 62%, transparent 63%);
 }
-/* Pie estilo bootstrap */
-.pie {
+.pie {/* Pie estilo bootstrap */
   width: 110px;
   height: 110px;
   border-radius: 50%;
@@ -51,7 +54,7 @@
   border: 6px solid #fff;
 }
 .legend-box { width: 10px; height: 10px; display: inline-block; border-radius: 3px; margin-right: 6px; }
-.legend-brand { background: #15297c; }
+.legend-brand { background: var(--brand-blue); }
 /* Movimiento sutil para tarjetas del dashboard */
 .tile-hover {
   transition: transform .15s ease, box-shadow .15s ease;
@@ -60,7 +63,14 @@
   transform: translateY(-2px);
   box-shadow: 0 .5rem 1rem rgba(0,0,0,.1);
 }
+.icon-24 { width: 24px; height: 24px; }/* Tamaño estándar para iconos de 24px */
+.icon-48 { font-size: 3rem; }
 /* Utilidad: preservar saltos de línea en textos largos (p.ej., artículos) */
 .pre-wrap { white-space: pre-wrap; }
 /* Utilidad bootstrap-like para progress delgada sin alterar bootstrap */
 .progress-thin { height: 8px; }
+/* Imagen fija para tablas (miniatura cuadrada) */
+.img-thumb-64 { width: 64px; height: 64px; object-fit: cover; }
+/* Miniatura más pequeña y con imagen completa visible */
+.img-thumb-40 { width: 40px; height: 40px; object-fit: contain; background-color: #fff; }
+.ratio-slim { --bs-aspect-ratio: 75%; }/* Ratio más delgado para contenedores previos */

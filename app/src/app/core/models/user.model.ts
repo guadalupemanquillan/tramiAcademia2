@@ -12,7 +12,7 @@ export interface User {
   nombreCompleto?: string;
   roles?: 'usuario' | 'editor';
   password?: string;
-  empresaId?: string | Empresa;
+  empresaId: string | Empresa;
   logros?: (string | Logros)[];
   categoriasEmpresa?: Categoria[];
 }
