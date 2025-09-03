@@ -1,76 +1,64 @@
-:root { --brand-blue: #15297c; }
-.dashboard-gradient {/* Fondo difuminado solo para dashboard */
-  background: linear-gradient(180deg, #d7ecff 0%, #f8fbff 40%, #ffffff 100%);
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&display=swap');
+
+:root {
+  --brand-blue: #03528A;
+  --brand-blue-deep: #023B5A;
+  --bs-primary: var(--brand-blue);
+  --bs-primary-rgb: 3, 82, 138;
+  --bs-link-color: var(--brand-blue);
+
+  /* Sidebar */
+  --sidebar-link-color: rgb(63, 73, 90);
+  --sidebar-active-color: #ffffff;
+  --sidebar-active-bg: #0753f5;
+  --sidebar-hover-bg: rgba(7, 83, 245, .10);
 }
-.btn-brand {/* Botón azul sólido de marca (sin afectar el primary de Bootstrap para el sidebar) */
-  background-color: var(--brand-blue);
-  border-color: var(--brand-blue);
-  color: #fff;
+/* Fondo del dashboard */
+.dashboard-gradient {
+  background-color: #f9fcff;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-size: 100% 1600px;
+  background-image:
+    radial-gradient(65% 50% at 0% 0%, rgba(133, 218, 255, .18) 0%, rgba(133, 218, 255, 0) 70%),
+    radial-gradient(55% 45% at 90% 0%, rgba(3, 82, 138, .06) 0%, rgba(3, 82, 138, 0) 60%),
+    radial-gradient(70% 55% at 50% -10%, rgba(133, 218, 255, .12) 0%, rgba(133, 218, 255, 0) 60%);
 }
-.btn-brand:hover,
-.btn-brand:focus {
-  background-color: #102063;
-  border-color: #102063;
-  color: #fff;
-}
-/* Azul de marca reutilizable */
-.brand-bg { background-color: var(--brand-blue) !important; }
-.brand-border { border-color: var(--brand-blue) !important; }
-.brand-text { color: var(--brand-blue) !important; }
-/* Tamaños/figuras reutilizables */
-.circle-40 { width: 40px; height: 40px; border-radius: 50%; }
-/* Utilidad para mitades en acciones detalle */
-.btn-half { max-width: 50%; }
-/* Modales - estilo unificado */
-.modal .modal-content {
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0,0,0,.15);
-  border: 1px solid var(--bs-border-color, #dee2e6);
-}
-.modal .modal-header {
-  background-color: var(--bs-primary-bg-subtle, #e7f1ff);
-  color: var(--bs-primary-text-emphasis, #0d3b66);
-}
-.donut {/* Dashboard donut chart (minimal CSS, reutiliza colores de Bootstrap) */
-  width: 84px;
-  height: 84px;
-  border-radius: 50%;
-  position: relative;
-}
-.donut-center {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  background: radial-gradient(closest-side, #fff 62%, transparent 63%);
-}
-.pie {/* Pie estilo bootstrap */
-  width: 110px;
-  height: 110px;
-  border-radius: 50%;
-  box-shadow: 0 2px 8px rgba(0,0,0,.15);
-  border: 6px solid #fff;
-}
-.legend-box { width: 10px; height: 10px; display: inline-block; border-radius: 3px; margin-right: 6px; }
-.legend-brand { background: var(--brand-blue); }
-/* Movimiento sutil para tarjetas del dashboard */
-.tile-hover {
-  transition: transform .15s ease, box-shadow .15s ease;
-}
-.tile-hover:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 .5rem 1rem rgba(0,0,0,.1);
-}
-.icon-24 { width: 24px; height: 24px; }/* Tamaño estándar para iconos de 24px */
-.icon-48 { font-size: 3rem; }
-/* Utilidad: preservar saltos de línea en textos largos (p.ej., artículos) */
-.pre-wrap { white-space: pre-wrap; }
-/* Utilidad bootstrap-like para progress delgada sin alterar bootstrap */
-.progress-thin { height: 8px; }
-/* Imagen fija para tablas (miniatura cuadrada) */
-.img-thumb-64 { width: 64px; height: 64px; object-fit: cover; }
-/* Miniatura más pequeña y con imagen completa visible */
+/* Sidebar base (mantener look) */
+.sidebar { width: 300px; border-right: 1px solid rgba(17,24,39,.06); min-height: 100vh; }
+.sidebar .nav { gap: .625rem; }
+.sidebar .nav-link { color: var(--sidebar-link-color); padding: .75rem 1rem; display: flex; align-items: center; border-radius: 12px; transition: background .2s ease, color .15s ease; }
+.sidebar .nav-link .bi { margin-right: .75rem; font-size: 1.25rem; color: currentColor; }
+.sidebar .nav-link:hover, .sidebar .nav-link:active { text-decoration: none; background-color: var(--sidebar-hover-bg); }
+.sidebar .nav-pills .nav-link.active, .sidebar .nav-link.active { background-color: var(--sidebar-active-bg) !important; color: var(--sidebar-active-color) !important; font-weight: 600; }
+.sidebar .nav-link.active .bi { color: #fff !important; }
+/* Hover suave con sombra interior */
+.card-hover-soft { transition: box-shadow .2s ease, background-color .2s ease; }
+.card-hover-soft:hover { background-color: rgba(133, 218, 255, .10); box-shadow: inset 0 0 10px rgba(133, 218, 255, .20); }
+/* Guía del editor */
+.card-hover-move { transition: transform .18s ease, box-shadow .18s ease; }
+.card-hover-move:hover { transform: translateY(-2px); }
+.guide-card { cursor: pointer; }
+.guide-chevron { font-size: 1.5rem; color: #9aa3b2; transition: color .15s ease, transform .18s ease; }
+.guide-card:hover .guide-chevron { color: var(--brand-blue); }
+/* Utilidades mínimas */
+.square-48 { width: 48px; height: 48px; border-radius: 12px; }
+.icon-24 { width: 24px; height: 24px; object-fit: contain; }
+.icon-32 { width: 32px; height: 32px; object-fit: contain; }
+.icon-40 { width: 40px; height: 40px; object-fit: contain; }
 .img-thumb-40 { width: 40px; height: 40px; object-fit: contain; background-color: #fff; }
-.ratio-slim { --bs-aspect-ratio: 75%; }/* Ratio más delgado para contenedores previos */
+.compact-card { border-radius: 16px; }
+/* Restaurados para mantener look y efectos previos */
+.dashboard-card { border: 1px solid rgba(17, 24, 39, .06); background-color: #ffffff; border-radius: 20px; box-shadow: 0 8px 24px rgba(16, 24, 40, .08); }
+.card-hover { transition: box-shadow .2s ease, border-color .2s ease, background-color .2s ease; }
+.card-hover:hover { border-color: rgba(191, 220, 236, 1); box-shadow: 0 12px 32px rgba(16, 24, 40, .12); background-color: #ffffff; }
+.card-hover-soft:hover .bi-chevron-right { color: var(--brand-blue) !important; font-weight: 700; }
+.card-hover-soft .bi-chevron-right { -webkit-text-stroke: .35px currentColor; text-shadow: .5px 0 0 currentColor, -.5px 0 0 currentColor, 0 .5px 0 currentColor, 0 -.5px 0 currentColor; }
+.section-title { font-weight: 700; font-size: 1.125rem; color: #1f2937; margin: 1rem 0 .25rem; }
+.label-overline { display: inline-flex; align-items: center; gap: .25rem; margin-top: .5rem; font-size: .75rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--brand-blue); }
+.label-overline .bi { font-size: .9rem; }
+.label-overline--primary, .label-overline--success, .label-overline--warning, .label-overline--info, .label-overline--dark { color: var(--brand-blue); }
+
+/* Botón de marca (azul dashboard) */
+.btn-brand { background-color: var(--brand-blue); border-color: var(--brand-blue); color: #fff; }
+.btn-brand:hover, .btn-brand:focus { background-color: var(--brand-blue-deep); border-color: var(--brand-blue-deep); color: #fff; }

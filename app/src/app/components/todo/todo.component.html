@@ -1,75 +1,59 @@
-<div class="card shadow-sm mx-4">
-  <div class="card-header bg-primary-subtle text-primary-emphasis d-flex justify-content-between align-items-center">
-    <h5 class="mb-0">{{ authService.role === 'editor' ? 'Tareas a realizar' : 'Mis tareas' }}</h5>
-    <button *ngIf="authService.role === 'editor'" class="btn btn-brand" data-bs-toggle="modal"
-      data-bs-target="#modalCrearTodo">
-      Crear nueva tarea a realizar
-    </button>
+<div class="container-fluid py-3">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="fs-6 fw-bold text-dark">{{ authService.role === 'editor' ? 'Tareas a realizar' : 'Mis tareas' }}</div>
+    <button *ngIf="authService.role === 'editor'" class="btn btn-brand" data-bs-toggle="modal" data-bs-target="#modalCrearTodo">Crear nueva tarea</button>
   </div>
-  <div class="card-body">
     <div class="d-flex align-items-center flex-wrap gap-2 mb-3">
       <select id="categoriaSelect" class="form-select form-select-lg w-auto me-2" [(ngModel)]="categoriaSeleccionada"
-        aria-label="Filtro de categoría">
+        aria-label="Filtro de categoría" title="Filtro de categoría">
         <option [ngValue]="null">Todas</option>
         <option *ngFor="let c of categorias" [ngValue]="c._id">{{ c.nombre }}</option>
       </select>
       <label class="form-label mb-0" for="categoriaSelect">Filtrar tareas por categoría</label>
     </div>
-    <div class="row g-3">
+    <div class="row g-4">
       <div *ngFor="let t of todosActivos; trackBy: trackTodo" class="col-12 col-md-6 col-xl-4">
-        <div class="card h-100 shadow-sm" [class.border-success]="authService.role !== 'editor' && isTodoCompletado(t)">
-          <div class="card-header d-flex justify-content-between align-items-center">
-            <div>
-              <strong>{{ t.titulo }}</strong>
-              <span class="badge bg-light text-dark border ms-2">{{ obtenerNombreCategoria(t.categoriaId) }}</span>
-              <ng-container *ngIf="authService.role === 'editor'">
-                <span class="badge ms-2" [class.bg-success]="t.activo" [class.bg-secondary]="!t.activo">
-                  {{ t.activo ? 'Activo' : 'Inactivo' }}
-                </span>
-              </ng-container>
-              <ng-container *ngIf="authService.role !== 'editor' && isTodoCompletado(t)">
-                <span class="badge bg-success ms-2">
-                  <i class="bi bi-check-circle-fill me-1"></i>Completado
-                </span>
-              </ng-container>
+        <div class="card dashboard-card card-hover-soft rounded-3 h-100">
+          <div class="card-body position-relative">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <div>
+                <span class="fw-semibold">{{ t.titulo }}</span>
+                <span class="badge bg-light text-dark border ms-2">{{ obtenerNombreCategoria(t.categoriaId) }}</span>
+                <ng-container *ngIf="authService.role === 'editor'">
+                  <span class="badge ms-2" [class.bg-success]="t.activo" [class.bg-secondary]="!t.activo">{{ t.activo ? 'Activo' : 'Inactivo' }}</span>
+                </ng-container>
+                <ng-container *ngIf="authService.role !== 'editor' && isTodoCompletado(t)">
+                  <span class="badge bg-success ms-2"><i class="bi bi-check-circle-fill me-1"></i>Completado</span>
+                </ng-container>
+              </div>
+              <div *ngIf="authService.role === 'editor'" class="ms-auto">
+                <button class="btn btn-link text-dark p-0 me-2" (click)="abrirEditar(t)" data-bs-toggle="modal" data-bs-target="#modalEditarTodo" title="Editar">
+                  <i class="bi bi-pencil-fill"></i>
+                </button>
+                <button class="btn btn-link text-dark p-0" (click)="confirmarEliminar(t)" title="Eliminar">
+                  <i class="bi bi-trash3-fill"></i>
+                </button>
+              </div>
             </div>
-            <div *ngIf="authService.role === 'editor'">
-              <button class="btn btn-link text-dark p-0 me-2" (click)="abrirEditar(t)" data-bs-toggle="modal"
-                data-bs-target="#modalEditarTodo" title="Editar">
-                <i class="bi bi-pencil-fill"></i>
-              </button>
-              <button class="btn btn-link text-dark p-0" (click)="confirmarEliminar(t)" title="Eliminar">
-                <i class="bi bi-trash3-fill"></i>
-              </button>
-            </div>
-          </div>
-          <div class="card-body">
             <ul class="list-unstyled mb-0">
-              <ng-container *ngIf="authService.role === 'editor'">
-                <li *ngFor="let tb of (t.tareasBase || [])" class="mb-1">
-                  <span [class.text-decoration-line-through]="tb.completada">• {{ tb.nombreTarea }}</span>
-                </li>
-              </ng-container>
-              <ng-container *ngIf="authService.role !== 'editor'">
-                <li *ngFor="let tb of (t.tareasBase || [])" class="mb-2 d-flex align-items-center">
-                  <span class="me-2">
-                    <i *ngIf="isTareaCompletadaPorCategoria(tb.nombreTarea, t)"
-                      class="bi bi-check-circle-fill text-success"></i>
-                    <i *ngIf="!isTareaCompletadaPorCategoria(tb.nombreTarea, t)" class="bi bi-circle text-muted"></i>
-                  </span>
-                  <span [class.text-decoration-line-through]="isTareaCompletadaPorCategoria(tb.nombreTarea, t)"
-                    [class.text-muted]="isTareaCompletadaPorCategoria(tb.nombreTarea, t)">
-                    {{ tb.nombreTarea }}
-                  </span>
-                </li>
-              </ng-container>
+              <li *ngIf="authService.role === 'editor'" class="d-none"></li>
+              <li *ngFor="let tb of (t.tareasBase || [])" class="mb-2 d-flex align-items-center">
+                <span class="me-2" *ngIf="authService.role !== 'editor'">
+                  <i *ngIf="isTareaCompletadaPorCategoria(tb.nombreTarea, t)" class="bi bi-check-circle-fill text-success"></i>
+                  <i *ngIf="!isTareaCompletadaPorCategoria(tb.nombreTarea, t)" class="bi bi-circle text-muted"></i>
+                </span>
+                <span [class.text-decoration-line-through]="authService.role === 'editor' ? tb.completada : isTareaCompletadaPorCategoria(tb.nombreTarea, t)"
+                      [class.text-muted]="authService.role !== 'editor' && isTareaCompletadaPorCategoria(tb.nombreTarea, t)">
+                  {{ tb.nombreTarea }}
+                </span>
+              </li>
             </ul>
+            <a *ngIf="authService.role !== 'editor'" routerLink="/usuario/todo" class="stretched-link"></a>
           </div>
         </div>
       </div>
     </div>
   </div>
-</div>
 <div class="modal fade" id="modalCrearTodo" tabindex="-1" *ngIf="authService.role === 'editor'">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -84,8 +68,8 @@
           Para crear tareas del Todo, primero debes cargar al menos un video o un artículo.
         </div>
         <div class="mb-3">
-          <label class="form-label">Título</label>
-          <input class="form-control" [(ngModel)]="nuevoTodo.titulo">
+          <label class="form-label" for="nuevoTodoTitulo">Título</label>
+          <input id="nuevoTodoTitulo" class="form-control" [(ngModel)]="nuevoTodo.titulo" placeholder="Título del checklist" title="Título del checklist">
         </div>
         <div class="form-check form-switch mb-3">
           <input class="form-check-input" type="checkbox" id="todoActivoNuevo" [(ngModel)]="nuevoTodo.activo"
@@ -95,7 +79,7 @@
         <div class="mb-3">
           <label class="form-label">Categoría *</label>
           <select class="form-select" [(ngModel)]="nuevoTodo.categoriaId" (change)="filtrarContenidoPorCategoria()"
-            required>
+            required title="Categoría del checklist">
             <option [ngValue]="null" disabled selected>Selecciona una categoría</option>
             <option *ngFor="let c of categorias" [ngValue]="c._id">{{ c.nombre }}</option>
           </select>
@@ -103,7 +87,7 @@
         <div class="mb-3">
           <label class="form-label">Videos a visualizar</label>
           <select class="form-select mb-2" [(ngModel)]="videoSeleccionado" (change)="agregarVideoSeleccionado()"
-            [disabled]="!hayContenidoDisponible()">
+            [disabled]="!hayContenidoDisponible()" title="Seleccionar video">
             <option [ngValue]="null">
               {{ getMensajeContenido('videos') }}
             </option>
@@ -124,7 +108,7 @@
         <div class="mb-3">
           <label class="form-label">Artículos a leer</label>
           <select class="form-select mb-2" [(ngModel)]="articuloSeleccionado" (change)="agregarArticuloSeleccionado()"
-            [disabled]="!hayContenidoDisponible()">
+            [disabled]="!hayContenidoDisponible()" title="Seleccionar artículo">
             <option [ngValue]="null">
               {{ getMensajeContenido('articulos') }}
             </option>
@@ -162,8 +146,8 @@
       </div>
       <div class="modal-body">
         <div class="mb-3">
-          <label class="form-label">Título</label>
-          <input class="form-control" [(ngModel)]="t.titulo">
+          <label class="form-label" for="tTituloEdit">Título</label>
+          <input id="tTituloEdit" class="form-control" [(ngModel)]="t.titulo" placeholder="Título del checklist" title="Título del checklist">
         </div>
         <div class="form-check form-switch mb-3">
           <input class="form-check-input" type="checkbox" id="todoActivoEdit" [(ngModel)]="t.activo"
@@ -172,7 +156,7 @@
         </div>
         <div class="mb-3">
           <label class="form-label">Categoría</label>
-          <select class="form-select" [(ngModel)]="t.categoriaId">
+          <select class="form-select" [(ngModel)]="t.categoriaId" title="Categoría del checklist">
             <option [ngValue]="null">Sin categoría</option>
             <option *ngFor="let c of categorias" [ngValue]="c._id">{{ c.nombre }}</option>
           </select>
@@ -180,13 +164,13 @@
         <div class="mb-2">
           <label class="form-label">Tareas del Todo</label>
           <div class="input-group mb-2">
-            <input class="form-control" #tnameEdit placeholder="Nombre de tarea (video/articulo/otro)">
+            <input id="tareaNombreEdit" class="form-control" #tnameEdit placeholder="Nombre de tarea (video/articulo/otro)" title="Nombre de la tarea">
             <button type="button" class="btn btn-outline-primary" (click)="addTareaBaseEdit(tnameEdit)">Agregar</button>
           </div>
           <ul class="list-group">
             <li *ngFor="let tb of (t.tareasBase || []); let i=index"
               class="list-group-item d-flex justify-content-between">
-              <input class="form-control me-2" [(ngModel)]="tb.nombreTarea">
+              <input class="form-control me-2" [(ngModel)]="tb.nombreTarea" placeholder="Nombre de tarea" title="Nombre de tarea">
               <button type="button" class="btn btn-sm btn-outline-danger"
                 (click)="removeTareaBaseEdit(i)">Quitar</button>
             </li>

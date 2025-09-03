@@ -281,6 +281,7 @@ export class UserComponent implements OnInit {
 
     return empresaId.nombre || 'Sin nombre';
   }
+  
     // Las categorías están en la empresa, no directamente en el usuario. 
   getCategoriasEmpresa(user: User): string {
     if (user.empresaId && typeof user.empresaId === 'object' && (user.empresaId as any).categorias) {

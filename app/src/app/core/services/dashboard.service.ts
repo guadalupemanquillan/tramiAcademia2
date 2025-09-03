@@ -68,6 +68,87 @@ export class DashboardService {
       tareasCompletadasPct$
     };
   }
+  // Wrappers públicos para reutilizar en componentes
+  tareasPendientesCount$(userId: string) { return this.calcularTareasPendientes(userId); }
+  testsPendientesCount$(userId: string) { return this.calcularTestsPendientes(userId); }
+  // Helpers de agregación/fecha reutilizables
+  getLatestDate(items: any[]): Date | null {
+    if (!Array.isArray(items) || !items.length) return null;
+    let latest = 0;
+    for (const it of items) {
+      const candidates: Array<string | Date | undefined> = [
+        it?.updatedAt,
+        it?.createdAt,
+        Array.isArray(it?.historialEdiciones) && it.historialEdiciones.length
+          ? it.historialEdiciones[it.historialEdiciones.length - 1]?.fechaEdicion
+          : undefined,
+      ];
+      for (const c of candidates) {
+        const ts = c ? new Date(c as any).getTime() : 0;
+        if (!Number.isNaN(ts)) latest = Math.max(latest, ts);
+      }
+    }
+    return latest ? new Date(latest) : null;
+  }
+
+  getRelativeTimeFromNow(date: Date): string {
+    const diffMs = Date.now() - date.getTime();
+    const sec = Math.round(diffMs / 1000);
+    const min = Math.round(sec / 60);
+    const hr = Math.round(min / 60);
+    const day = Math.round(hr / 24);
+    if (sec < 60) return `hace ${sec} segundo${sec !== 1 ? 's' : ''}`;
+    if (min < 60) return `hace ${min} minuto${min !== 1 ? 's' : ''}`;
+    if (hr < 24) return `hace ${hr} hora${hr !== 1 ? 's' : ''}`;
+    if (day < 30) return `hace ${day} día${day !== 1 ? 's' : ''}`;
+    const months = Math.round(day / 30);
+    if (months < 12) return `hace ${months} mes${months !== 1 ? 'es' : ''}`;
+    const years = Math.round(months / 12);
+    return `hace ${years} año${years !== 1 ? 's' : ''}`;
+  }
+
+  private getEmpresaNombreByCategoriaId(catRef: any, categorias: Categoria[], empresas: Empresa[]): string {
+    const catId = typeof catRef === 'object' && catRef !== null ? String((catRef as any)?._id || '') : String(catRef || '');
+    if (!catId) return '';
+    const categoria = (categorias || []).find((c: any) => String(c?._id || '') === catId);
+    const empresaId = typeof (categoria as any)?.empresaId === 'object' && (categoria as any)?.empresaId !== null
+      ? String(((categoria as any).empresaId as any)?._id || '')
+      : String((categoria as any)?.empresaId || '');
+    if (!empresaId) return '';
+    const empresa = (empresas || []).find((e: any) => String(e?._id || '') === empresaId);
+    return (empresa as any)?.nombre || '';
+  }
+
+  getResumenPorEmpresa(items: any[], categorias: Categoria[], empresas: Empresa[], etiqueta: string): string {
+    if (!Array.isArray(items) || !items.length) return `${etiqueta}: 0`;
+    const conteo = new Map<string, number>();
+    for (const it of items) {
+      const empresaNombre = this.getEmpresaNombreByCategoriaId(it?.categoriaId, categorias, empresas);
+      if (!empresaNombre) continue;
+      conteo.set(empresaNombre, (conteo.get(empresaNombre) || 0) + 1);
+    }
+    if (!conteo.size) return `${etiqueta}: 0`;
+    return Array.from(conteo.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([nombre, n]) => `${nombre}: ${n}`)
+      .join(' · ');
+  }
+
+  getEmpresaBreakdownList(items: any[], categorias: Categoria[], empresas: Empresa[]): string[] {
+    const nombres = (empresas || []).map((e: any) => String(e?.nombre || '')).filter(Boolean);
+    if (!nombres.length) return [];
+    const counts = new Map<string, number>();
+    for (const name of nombres) counts.set(name, 0);
+    const arr = Array.isArray(items) ? items : [];
+    for (const it of arr) {
+      const name = this.getEmpresaNombreByCategoriaId(it?.categoriaId, categorias, empresas);
+      if (!name) continue;
+      counts.set(name, (counts.get(name) || 0) + 1);
+    }
+    return Array.from(counts.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([name, n]) => `${name}: ${n}`);
+  }
   private calcularTareasPendientes(userId: string): Observable<number> {
     if (!userId) return of(0);
     return this.userService.getOne(userId).pipe(

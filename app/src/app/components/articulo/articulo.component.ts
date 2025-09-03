@@ -2,7 +2,6 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
-
 import { ArticuloService } from '../../core/services/articulo.service';
 import { Articulo } from '../../core/models/articulo.model';
 import { Categoria } from '../../core/models/categoria.model';
@@ -12,7 +11,6 @@ import { AlertService } from '../../core/services/alert.service';
 import { TareasService } from '../../core/services/tareas.service';
 import { UserService } from '../../core/services/user.service';
 import { User } from '../../core/models/user.model';
-
 @Component({
     selector: 'app-articulos',
     standalone: true,
